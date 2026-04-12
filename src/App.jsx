@@ -32,14 +32,73 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('list');
   const [currentSection, setCurrentSection] = useState('home');
-  
+
   // Estados para datos de Supabase
   const [data, setData] = useState({ alumnos: [], cxc: [], finanzas: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Estados para filtros
+  const [filters, setFilters] = useState({});
+
+  // Estados para formulario de creación
+  const [formData, setFormData] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+
+  // Estados para sistema de etiquetas
+  const [tags, setTags] = useState({ alumnos: [], cxc: [], finanzas: [] });
+  const [newTag, setNewTag] = useState('');
+  const [showNewTagInput, setShowNewTagInput] = useState(false);
+
+  // Cargar etiquetas desde localStorage
+  useEffect(() => {
+    const savedTags = localStorage.getItem('kinder-finance-tags');
+    if (savedTags) {
+      try {
+        setTags(JSON.parse(savedTags));
+      } catch (e) {
+        console.error('Error loading tags:', e);
+      }
+    } else {
+      // Tags por defecto
+      const defaultTags = {
+        alumnos: ['Pre-Kinder', 'Kinder A', 'Kinder B'],
+        cxc: ['Mensualidad', 'Inscripción', 'Actividad Extra', 'Uniforme', 'Material'],
+        finanzas: ['Mensualidad', 'Inscripción', 'Nómina', 'Mantenimiento', 'Material', 'Servicios']
+      };
+      setTags(defaultTags);
+      localStorage.setItem('kinder-finance-tags', JSON.stringify(defaultTags));
+    }
+  }, []);
+
+  // Guardar tags en localStorage cuando cambian
+  useEffect(() => {
+    if (Object.keys(tags).length > 0) {
+      localStorage.setItem('kinder-finance-tags', JSON.stringify(tags));
+    }
+  }, [tags]);
+
+  // Función para agregar nueva etiqueta
+  const addTag = (section) => {
+    if (!newTag.trim()) return;
+    const tagList = tags[section] || [];
+    if (!tagList.includes(newTag.trim())) {
+      const updatedTags = { ...tags, [section]: [...tagList, newTag.trim()] };
+      setTags(updatedTags);
+    }
+    setNewTag('');
+    setShowNewTagInput(false);
+  };
+
+  // Función para eliminar etiqueta
+  const removeTag = (section, tagToRemove) => {
+    const updatedTags = { ...tags, [section]: tags[section].filter(t => t !== tagToRemove) };
+    setTags(updatedTags);
+  };
 
   // Cargar datos al cambiar de sección
   useEffect(() => {
@@ -95,6 +154,81 @@ const App = () => {
       setError(`Error al eliminar: ${err.message}`);
     }
   };
+
+  // Función para crear registro
+  const handleCreate = async () => {
+    if (!currentSection || currentSection === 'home') return;
+    
+    setFormErrors({});
+    
+    try {
+      const recordToCreate = {
+        ...formData,
+        eliminado: false,
+      };
+
+      const { data: result, error: err } = await supabase
+        .from(currentSection)
+        .insert([recordToCreate])
+        .select();
+      
+      if (err) throw err;
+      
+      // Actualizar estado local
+      setData(prev => ({
+        ...prev,
+        [currentSection]: [result[0], ...prev[currentSection]]
+      }));
+      
+      // Limpiar formulario
+      setFormData({});
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error al crear:', err);
+      setFormErrors({ general: err.message });
+    }
+  };
+
+  // Función para aplicar filtros
+  const applyFilters = () => {
+    // Los filtros se aplican en el render
+    setIsFilterOpen(false);
+  };
+
+  // Función para limpiar filtros
+  const clearFilters = () => {
+    setFilters({});
+  };
+
+  // Función para obtener datos filtrados
+  const getFilteredData = () => {
+    let filtered = sectionData;
+
+    // Filtro por búsqueda
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => {
+        if (currentSection === 'alumnos') return item.nombre?.toLowerCase().includes(searchLower);
+        if (currentSection === 'cxc') return item.alumno_nombre?.toLowerCase().includes(searchLower) || item.concepto?.toLowerCase().includes(searchLower);
+        if (currentSection === 'finanzas') return item.categoria?.toLowerCase().includes(searchLower);
+        return true;
+      });
+    }
+
+    // Filtros avanzados
+    if (Object.keys(filters).length > 0) {
+      filtered = filtered.filter(item => {
+        return Object.entries(filters).every(([key, value]) => {
+          if (!value) return true;
+          return item[key] === value;
+        });
+      });
+    }
+
+    return filtered;
+  };
+
+  const filteredData = getFilteredData();
 
   // Helper para estilos del Semáforo según sección
   const getStatusStyles = (status, section) => {
@@ -274,8 +408,13 @@ const App = () => {
               {viewMode === 'list' ? <TableIcon size={18} /> : <LayoutList size={18} />}
             </button>
 
-            <button className="p-2 bg-[#EAEAEA] rounded-xl text-[#74739E] hover:bg-slate-200 transition-colors">
+            <button 
+              onClick={() => setIsFilterOpen(true)}
+              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${Object.keys(filters).length > 0 ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200'}`}
+              title="Filtrar"
+            >
               <Filter size={18} />
+              {Object.keys(filters).length > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>}
             </button>
           </div>
         </div>
@@ -288,15 +427,7 @@ const App = () => {
               <p className="text-sm">Bienvenido al sistema de gestión</p>
               <p className="text-xs mt-2">Selecciona una sección para comenzar</p>
             </div>
-          ) : sectionData
-            .filter(item => {
-              const searchLower = searchTerm.toLowerCase();
-              if (currentSection === 'alumnos') return item.nombre?.toLowerCase().includes(searchLower);
-              if (currentSection === 'cxc') return item.alumno_nombre?.toLowerCase().includes(searchLower) || item.concepto?.toLowerCase().includes(searchLower);
-              if (currentSection === 'finanzas') return item.categoria?.toLowerCase().includes(searchLower);
-              return true;
-            })
-            .map((item) => (
+          ) : filteredData.map((item) => (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
@@ -366,13 +497,7 @@ const App = () => {
                 </p>
               </div>
               <CRUDTable
-                data={sectionData.filter(item => {
-                  const searchLower = searchTerm.toLowerCase();
-                  if (currentSection === 'alumnos') return item.nombre?.toLowerCase().includes(searchLower);
-                  if (currentSection === 'cxc') return item.alumno_nombre?.toLowerCase().includes(searchLower) || item.concepto?.toLowerCase().includes(searchLower);
-                  if (currentSection === 'finanzas') return item.categoria?.toLowerCase().includes(searchLower);
-                  return true;
-                })}
+                data={filteredData}
                 onSelect={setSelectedItem}
                 section={currentSection}
               />
@@ -513,83 +638,434 @@ const App = () => {
         })}
       </nav>
 
-      {/* MODAL DE CREACIÓN */}
-      {isModalOpen && (
+      {/* MODAL DE FILTROS */}
+      {isFilterOpen && currentSection !== 'home' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-[#F7F9FB] rounded-[2rem] shadow-2xl p-8 border border-white animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-[#74739E] mb-6">
-              {currentSection === 'home' ? 'Nuevo Registro' :
-               currentSection === 'alumnos' ? 'Nuevo Alumno' :
-               currentSection === 'cxc' ? 'Nueva Cuenta por Cobrar' : 'Nuevo Registro Financiero'}
-            </h3>
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
+          <div className="relative w-full max-w-lg bg-[#F7F9FB] rounded-[2rem] shadow-2xl p-8 border border-white animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-[#74739E]">
+                {currentSection === 'alumnos' ? 'Filtrar Alumnos' :
+                 currentSection === 'cxc' ? 'Filtrar Cuentas' : 'Filtrar Finanzas'}
+              </h3>
+              <button onClick={() => setIsFilterOpen(false)} className="p-2 hover:bg-slate-200 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+
             <div className="space-y-4">
-              {currentSection === 'alumnos' ? (
+              {currentSection === 'alumnos' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno</label>
-                    <input type="text" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grado</label>
-                    <select className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]">
-                      <option>Pre-Kinder</option>
-                      <option>Kinder A</option>
-                      <option>Kinder B</option>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <select
+                      value={filters.estado || ''}
+                      onChange={(e) => setFilters({ ...filters, estado: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                      <option value="Moroso">Moroso</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tutor</label>
-                    <input type="text" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grado</label>
+                    <select
+                      value={filters.grado || ''}
+                      onChange={(e) => setFilters({ ...filters, grado: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Pre-Kinder">Pre-Kinder</option>
+                      <option value="Kinder A">Kinder A</option>
+                      <option value="Kinder B">Kinder B</option>
+                    </select>
                   </div>
                 </>
-              ) : currentSection === 'cxc' ? (
+              )}
+
+              {currentSection === 'cxc' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Alumno</label>
-                    <input type="text" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <select
+                      value={filters.estado || ''}
+                      onChange={(e) => setFilters({ ...filters, estado: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Pagado">Pagado</option>
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Vencido">Vencido</option>
+                      <option value="Parcial">Parcial</option>
+                    </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Concepto</label>
-                    <input type="text" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto</label>
-                    <input type="number" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
+                    <select
+                      value={filters.concepto || ''}
+                      onChange={(e) => setFilters({ ...filters, concepto: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todos</option>
+                      {tags.cxc.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                    </select>
                   </div>
                 </>
-              ) : currentSection === 'finanzas' ? (
+              )}
+
+              {currentSection === 'finanzas' && (
                 <>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tipo</label>
-                    <select className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]">
+                    <select
+                      value={filters.tipo || ''}
+                      onChange={(e) => setFilters({ ...filters, tipo: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todos</option>
                       <option value="Ingreso">Ingreso</option>
                       <option value="Gasto">Gasto</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Categoría</label>
-                    <input type="text" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <select
+                      value={filters.estado || ''}
+                      onChange={(e) => setFilters({ ...filters, estado: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Completado">Completado</option>
+                      <option value="Pendiente">Pendiente</option>
+                    </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto</label>
-                    <input type="number" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Categoría</label>
+                    <select
+                      value={filters.categoria || ''}
+                      onChange={(e) => setFilters({ ...filters, categoria: e.target.value || undefined })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Todas</option>
+                      {tags.finanzas.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                    </select>
                   </div>
                 </>
-              ) : (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre</label>
-                  <input type="text" className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]" />
-                </div>
               )}
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-full py-4 bg-[#A7C7E7] text-white font-black rounded-xl shadow-lg shadow-[#A7C7E7]/30 mt-4 active:scale-95 transition-all"
-              >
-                {currentSection === 'home' ? 'CREAR ELEMENTO' : 
-                 currentSection === 'alumnos' ? 'CREAR ALUMNO' :
-                 currentSection === 'cxc' ? 'CREAR CUENTA' : 'CREAR REGISTRO'}
-              </button>
+
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 py-4 bg-[#EAEAEA] text-[#74739E] font-black rounded-xl active:scale-95 transition-all"
+                >
+                  LIMPIAR
+                </button>
+                <button
+                  onClick={applyFilters}
+                  className="flex-1 py-4 bg-[#A7C7E7] text-white font-black rounded-xl shadow-lg shadow-[#A7C7E7]/30 active:scale-95 transition-all"
+                >
+                  APLICAR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CREACIÓN */}
+      {isModalOpen && currentSection !== 'home' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+          <div className="relative w-full max-w-md bg-[#F7F9FB] rounded-[2rem] shadow-2xl p-8 border border-white animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-black text-[#74739E] mb-6">
+              {currentSection === 'alumnos' ? 'Nuevo Alumno' :
+               currentSection === 'cxc' ? 'Nueva Cuenta por Cobrar' : 'Nuevo Registro Financiero'}
+            </h3>
+
+            {formErrors.general && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                {formErrors.general}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {currentSection === 'alumnos' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno *</label>
+                    <input
+                      type="text"
+                      value={formData.nombre || ''}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grado *</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {tags.alumnos.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => setFormData({ ...formData, grado: tag })}
+                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData.grado === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setShowNewTagInput(!showNewTagInput)}
+                        className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
+                      >
+                        + Nuevo
+                      </button>
+                    </div>
+                    {showNewTagInput && (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && addTag('alumnos')}
+                          placeholder="Nueva etiqueta..."
+                          className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                        />
+                        <button onClick={() => addTag('alumnos')} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tutor</label>
+                    <input
+                      type="text"
+                      value={formData.tutor || ''}
+                      onChange={(e) => setFormData({ ...formData, tutor: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Teléfono</label>
+                    <input
+                      type="text"
+                      value={formData.telefono || ''}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <select
+                      value={formData.estado || 'Activo'}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                      <option value="Moroso">Moroso</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {currentSection === 'cxc' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno *</label>
+                    <input
+                      type="text"
+                      value={formData.alumno_nombre || ''}
+                      onChange={(e) => setFormData({ ...formData, alumno_nombre: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Concepto *</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {tags.cxc.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => setFormData({ ...formData, concepto: tag })}
+                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData.concepto === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setShowNewTagInput(!showNewTagInput)}
+                        className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
+                      >
+                        + Nuevo
+                      </button>
+                    </div>
+                    {showNewTagInput && (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && addTag('cxc')}
+                          placeholder="Nuevo concepto..."
+                          className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                        />
+                        <button onClick={() => addTag('cxc')} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.monto || ''}
+                      onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Fecha de Vencimiento</label>
+                    <input
+                      type="date"
+                      value={formData.fecha_vencimiento || ''}
+                      onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <select
+                      value={formData.estado || 'Pendiente'}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Pagado">Pagado</option>
+                      <option value="Parcial">Parcial</option>
+                      <option value="Vencido">Vencido</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {currentSection === 'finanzas' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tipo *</label>
+                    <select
+                      value={formData.tipo || 'Ingreso'}
+                      onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="Ingreso">Ingreso</option>
+                      <option value="Gasto">Gasto</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Categoría *</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {tags.finanzas.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => setFormData({ ...formData, categoria: tag })}
+                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData.categoria === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setShowNewTagInput(!showNewTagInput)}
+                        className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
+                      >
+                        + Nuevo
+                      </button>
+                    </div>
+                    {showNewTagInput && (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && addTag('finanzas')}
+                          placeholder="Nueva categoría..."
+                          className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                        />
+                        <button onClick={() => addTag('finanzas')} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.monto || ''}
+                      onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Descripción</label>
+                    <textarea
+                      value={formData.descripcion || ''}
+                      onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7] resize-none"
+                      rows="3"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Método de Pago</label>
+                    <select
+                      value={formData.metodo_pago || ''}
+                      onChange={(e) => setFormData({ ...formData, metodo_pago: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <select
+                      value={formData.estado || 'Completado'}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                    >
+                      <option value="Completado">Completado</option>
+                      <option value="Pendiente">Pendiente</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-4 bg-[#EAEAEA] text-[#74739E] font-black rounded-xl active:scale-95 transition-all"
+                >
+                  CANCELAR
+                </button>
+                <button
+                  onClick={handleCreate}
+                  className="flex-1 py-4 bg-[#A7C7E7] text-white font-black rounded-xl shadow-lg shadow-[#A7C7E7]/30 active:scale-95 transition-all"
+                >
+                  CREAR
+                </button>
+              </div>
             </div>
           </div>
         </div>
