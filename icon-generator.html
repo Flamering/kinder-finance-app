@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PWA Icon Generator</title>
+  <style>
+    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+    canvas { margin: 10px; border-radius: 20px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; background: #A7C7E7; border: none; border-radius: 8px; color: white; font-weight: bold; }
+    button:hover { background: #74739E; }
+    .info { margin: 20px 0; padding: 15px; background: #f0f4f8; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>PWA Icon Generator for Kinder Finance App</h1>
+  <div class="info">
+    <p><strong>Instructions:</strong> Click the buttons below to download the PWA icons</p>
+  </div>
+  <div>
+    <button onclick="downloadIcon(192)">Download 192x192</button>
+    <button onclick="downloadIcon(512)">Download 512x512</button>
+    <button onclick="downloadIcon(180)">Download Apple Touch (180x180)</button>
+    <button onclick="downloadAll()">Download All</button>
+  </div>
+  <div id="preview"></div>
+
+  <script>
+    function createIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Background - soft blue gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, size);
+      gradient.addColorStop(0, '#A7C7E7');
+      gradient.addColorStop(1, '#74739E');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.15);
+      ctx.fill();
+
+      // Dollar sign symbol
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold ${size * 0.5}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', size / 2, size / 2 - size * 0.05);
+
+      // Small book/school icon at bottom
+      const bookY = size * 0.72;
+      const bookSize = size * 0.15;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(size / 2 - bookSize, bookY, bookSize * 2, bookSize * 0.6);
+      ctx.fillStyle = '#8FA8C8';
+      ctx.fillRect(size / 2 - bookSize * 0.8, bookY + bookSize * 0.1, bookSize * 1.6, bookSize * 0.4);
+
+      return canvas;
+    }
+
+    function downloadIcon(size) {
+      const canvas = createIcon(size);
+      const link = document.createElement('a');
+      const filename = size === 180 ? 'apple-touch-icon.png' : `pwa-${size}x${size}.png`;
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadAll() {
+      downloadIcon(192);
+      setTimeout(() => downloadIcon(512), 500);
+      setTimeout(() => downloadIcon(180), 1000);
+    }
+
+    // Preview
+    const preview = document.getElementById('preview');
+    [192, 512, 180].forEach(size => {
+      const canvas = createIcon(size);
+      canvas.style.width = Math.min(size, 200) + 'px';
+      canvas.style.height = Math.min(size, 200) + 'px';
+      preview.appendChild(canvas);
+    });
+  </script>
+</body>
+</html>
