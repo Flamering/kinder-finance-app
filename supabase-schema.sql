@@ -151,3 +151,4 @@ INSERT INTO finanzas (tipo, categoria, monto, descripcion, fecha, metodo_pago, e
 ('Gasto', 'Servicios', 1200.00, 'Luz y agua', '2024-04-08', 'Transferencia', 'Pendiente'),
 ('Ingreso', 'Uniforme', 1800.00, 'Venta de uniformes', '2024-04-07', 'Efectivo', 'Completado'),
 ('Gasto', 'Nómina', 3000.00, 'Pago maestros Mayo', '2024-04-07', 'Transferencia', 'Pendiente');
+u
