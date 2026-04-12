@@ -34,8 +34,9 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('list');
+  const [showTableView, setShowTableView] = useState(false);
   const [currentSection, setCurrentSection] = useState('home');
+  const [isMobile, setIsMobile] = useState(false);
 
   // Estados para datos de Supabase
   const [data, setData] = useState({ alumnos: [], cxc: [], finanzas: [] });
@@ -99,6 +100,31 @@ const App = () => {
     const updatedTags = { ...tags, [section]: tags[section].filter(t => t !== tagToRemove) };
     setTags(updatedTags);
   };
+
+  // Detectar si es mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // En desktop, mostrar tabla por defecto cuando hay sección
+      if (!mobile && currentSection !== 'home') {
+        setShowTableView(true);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Al cambiar de sección, mostrar tabla en desktop
+  useEffect(() => {
+    if (currentSection !== 'home' && !isMobile) {
+      setShowTableView(true);
+    } else if (isMobile) {
+      setShowTableView(false);
+    }
+    setSelectedItem(null);
+  }, [currentSection, isMobile]);
 
   // Cargar datos al cambiar de sección
   useEffect(() => {
@@ -368,7 +394,8 @@ const App = () => {
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-full md:w-80 bg-white border-r border-[#EAEAEA] flex flex-col transition-transform duration-300
-        ${selectedItem ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
+        ${selectedItem || (showTableView && !isMobile) ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
+        ${isMobile && showTableView ? '-translate-x-full' : ''}
       `}>
         {/* Header Fijo (Área Seleccionada en Screenshot) */}
         <div className="p-4 space-y-3 bg-white border-b border-[#EAEAEA]">
@@ -396,16 +423,18 @@ const App = () => {
               />
             </div>
 
-            {/* Botón de Cambio de Vista - Requerimiento Nuevo */}
+            {/* Botón de Cambio de Vista */}
             <button
               onClick={() => {
-                setViewMode(viewMode === 'list' ? 'table' : 'list');
-                setSelectedItem(null); // Reset para mostrar la tabla
+                setShowTableView(!showTableView);
+                if (showTableView) {
+                  setSelectedItem(null);
+                }
               }}
-              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${viewMode === 'list' ? 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200' : 'bg-[#74739E] text-white border-[#74739E]'}`}
-              title={viewMode === 'list' ? "Cambiar a Vista Tabla" : "Cambiar a Vista Lista"}
+              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${showTableView ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200'}`}
+              title={showTableView ? "Volver a Lista" : "Mostrar Tabla"}
             >
-              {viewMode === 'list' ? <TableIcon size={18} /> : <LayoutList size={18} />}
+              {showTableView ? <LayoutList size={18} /> : <TableIcon size={18} />}
             </button>
 
             <button 
@@ -483,7 +512,7 @@ const App = () => {
                 Reintentar
               </button>
             </div>
-          ) : currentSection !== 'home' && viewMode === 'table' && !selectedItem ? (
+          ) : currentSection !== 'home' && showTableView && !selectedItem ? (
             <div className="max-w-6xl mx-auto w-full">
               <div className="mb-8">
                 <h1 className="text-2xl font-bold text-[#74739E]">
@@ -594,9 +623,11 @@ const App = () => {
               </div>
               <h2 className="text-2xl font-bold text-[#74739E]">Dashboard Principal</h2>
               <p className="text-slate-400 max-w-md mx-auto mt-2">
-                {currentSection === 'home' 
+                {currentSection === 'home'
                   ? "Bienvenido al sistema de gestión del kinder. Selecciona una sección en la barra inferior para comenzar."
-                  : "No hay elementos para mostrar. Cambia a vista de tabla para ver los registros."}
+                  : showTableView 
+                    ? "No hay elementos para mostrar."
+                    : "Haz clic en el botón de tabla para ver los registros."}
               </p>
             </div>
           )}
