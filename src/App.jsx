@@ -53,6 +53,7 @@ const App = () => {
         const { data: result, error: err } = await supabase
           .from(currentSection)
           .select('*')
+          .eq('eliminado', false)
           .order('created_at', { ascending: false });
         
         if (err) throw err;
@@ -69,6 +70,31 @@ const App = () => {
   }, [currentSection]);
 
   const sectionData = data[currentSection] || [];
+
+  // Función de Soft Delete
+  const handleSoftDelete = async (itemId) => {
+    if (!currentSection || currentSection === 'home') return;
+    
+    try {
+      const { error: err } = await supabase
+        .from(currentSection)
+        .update({ eliminado: true })
+        .eq('id', itemId);
+      
+      if (err) throw err;
+      
+      // Actualizar estado local
+      setData(prev => ({
+        ...prev,
+        [currentSection]: prev[currentSection].filter(item => item.id !== itemId)
+      }));
+      
+      if (selectedItem?.id === itemId) setSelectedItem(null);
+    } catch (err) {
+      console.error('Error al eliminar:', err);
+      setError(`Error al eliminar: ${err.message}`);
+    }
+  };
 
   // Helper para estilos del Semáforo según sección
   const getStatusStyles = (status, section) => {
@@ -184,7 +210,11 @@ const App = () => {
                       <button className="p-2 text-[#74739E] hover:bg-[#74739E]/10 rounded-lg transition-colors" title="Editar">
                         <Pencil size={16} />
                       </button>
-                      <button className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                      <button 
+                        onClick={() => handleSoftDelete(item.id)}
+                        className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors" 
+                        title="Eliminar"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>

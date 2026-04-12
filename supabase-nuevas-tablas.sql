@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS tutores (
   rfc TEXT,
   curp TEXT,
   datos_facturacion JSONB,
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS maestros (
   especialidad TEXT,
   fecha_contratacion DATE DEFAULT CURRENT_DATE,
   activo BOOLEAN DEFAULT true,
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS salones (
   descripcion TEXT,
   capacidad_maxima INTEGER DEFAULT 25,
   horario TEXT,
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -64,6 +67,7 @@ CREATE TABLE IF NOT EXISTS maestros_salones (
   maestro_id UUID REFERENCES maestros(id) ON DELETE CASCADE,
   salon_id UUID REFERENCES salones(id) ON DELETE CASCADE,
   rol TEXT DEFAULT 'Principal' CHECK (rol IN ('Principal', 'Asistente', 'Suplente')),
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(maestro_id, salon_id)
 );
@@ -73,20 +77,26 @@ CREATE TABLE IF NOT EXISTS maestros_salones (
 -- =============================================
 ALTER TABLE alumnos 
   ADD COLUMN IF NOT EXISTS tutor_id UUID REFERENCES tutores(id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS salon_id UUID REFERENCES salones(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS salon_id UUID REFERENCES salones(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS eliminado BOOLEAN DEFAULT false;
 
 -- =============================================
 -- CREAR ÍNDICES PARA MEJOR RENDIMIENTO
 -- =============================================
 CREATE INDEX IF NOT EXISTS idx_tutores_email ON tutores(email);
 CREATE INDEX IF NOT EXISTS idx_tutores_rfc ON tutores(rfc);
+CREATE INDEX IF NOT EXISTS idx_tutores_eliminado ON tutores(eliminado);
 CREATE INDEX IF NOT EXISTS idx_maestros_email ON maestros(email);
 CREATE INDEX IF NOT EXISTS idx_maestros_activo ON maestros(activo);
+CREATE INDEX IF NOT EXISTS idx_maestros_eliminado ON maestros(eliminado);
 CREATE INDEX IF NOT EXISTS idx_salones_nombre ON salones(nombre);
+CREATE INDEX IF NOT EXISTS idx_salones_eliminado ON salones(eliminado);
 CREATE INDEX IF NOT EXISTS idx_alumnos_tutor_id ON alumnos(tutor_id);
 CREATE INDEX IF NOT EXISTS idx_alumnos_salon_id ON alumnos(salon_id);
+CREATE INDEX IF NOT EXISTS idx_alumnos_eliminado ON alumnos(eliminado);
 CREATE INDEX IF NOT EXISTS idx_maestros_salones_maestro ON maestros_salones(maestro_id);
 CREATE INDEX IF NOT EXISTS idx_maestros_salones_salon ON maestros_salones(salon_id);
+CREATE INDEX IF NOT EXISTS idx_maestros_salones_eliminado ON maestros_salones(eliminado);
 
 -- =============================================
 -- CREAR TRIGGERS PARA updated_at

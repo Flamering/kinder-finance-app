@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS alumnos (
   email TEXT,
   estado TEXT DEFAULT 'Activo' CHECK (estado IN ('Activo', 'Inactivo', 'Moroso')),
   fecha_inscripcion DATE DEFAULT CURRENT_DATE,
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS cxc (
   fecha_emision DATE DEFAULT CURRENT_DATE,
   fecha_vencimiento DATE,
   estado TEXT DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Pagado', 'Vencido', 'Parcial')),
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS finanzas (
   fecha DATE DEFAULT CURRENT_DATE,
   metodo_pago TEXT CHECK (metodo_pago IN ('Transferencia', 'Efectivo', 'Tarjeta')),
   estado TEXT DEFAULT 'Completado' CHECK (estado IN ('Completado', 'Pendiente')),
+  eliminado BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -50,10 +53,13 @@ CREATE TABLE IF NOT EXISTS finanzas (
 -- CREAR ÍNDICES PARA MEJOR RENDIMIENTO
 -- =============================================
 CREATE INDEX IF NOT EXISTS idx_alumnos_estado ON alumnos(estado);
+CREATE INDEX IF NOT EXISTS idx_alumnos_eliminado ON alumnos(eliminado);
 CREATE INDEX IF NOT EXISTS idx_cxc_alumno_id ON cxc(alumno_id);
 CREATE INDEX IF NOT EXISTS idx_cxc_estado ON cxc(estado);
+CREATE INDEX IF NOT EXISTS idx_cxc_eliminado ON cxc(eliminado);
 CREATE INDEX IF NOT EXISTS idx_finanzas_tipo ON finanzas(tipo);
 CREATE INDEX IF NOT EXISTS idx_finanzas_estado ON finanzas(estado);
+CREATE INDEX IF NOT EXISTS idx_finanzas_eliminado ON finanzas(eliminado);
 
 -- =============================================
 -- CREAR FUNCIÓN PARA ACTUALIZAR updated_at
