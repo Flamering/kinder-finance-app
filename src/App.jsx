@@ -513,9 +513,8 @@ const App = () => {
                 </h2>
               </div>
 
-              <section className="bg-white p-10 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-[#EAEAEA] space-y-8">
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {currentSection === 'alumnos' && (() => {
                     const activos = filteredData.filter(i => i.estado === 'Activo').length;
                     const morosos = filteredData.filter(i => i.estado === 'Moroso').length;
@@ -581,35 +580,36 @@ const App = () => {
                   })()}
                 </div>
 
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">
-                      {currentSection === 'alumnos' ? 'Alumnos' :
-                       currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
-                    </h1>
-                    <p className="text-slate-400 mt-1 text-sm">
-                      {currentSection === 'alumnos' ? 'Control de alumnos y su información académica.' :
-                       currentSection === 'cxc' ? 'Seguimiento de pagos y cuentas pendientes.' :
-                       'Registro de ingresos y gastos del kinder.'}
-                    </p>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+                        {currentSection === 'alumnos' ? 'Alumnos' :
+                         currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
+                      </h1>
+                      <p className="text-slate-400 mt-1 text-sm">
+                        {currentSection === 'alumnos' ? 'Control de alumnos y su información académica.' :
+                         currentSection === 'cxc' ? 'Seguimiento de pagos y cuentas pendientes.' :
+                         'Registro de ingresos y gastos del kinder.'}
+                      </p>
+                    </div>
+                    <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-[#F7F9FB] border-[#EAEAEA] text-slate-500">
+                      {filteredData.length} registros
+                    </span>
                   </div>
-                  <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-[#F7F9FB] border-[#EAEAEA] text-slate-500">
-                    {filteredData.length} registros
-                  </span>
-                </div>
 
-                <div className="overflow-x-auto">
-                  <CRUDTable
-                    data={filteredData}
-                    onSelect={setSelectedItem}
-                    section={currentSection}
-                  />
+                  <div className="overflow-x-auto">
+                    <CRUDTable
+                      data={filteredData}
+                      onSelect={setSelectedItem}
+                      section={currentSection}
+                    />
+                  </div>
                 </div>
-              </section>
-            </div>
+              </div>
           ) : selectedItem ? (
             <div className="animate-in slide-in-from-right-10 duration-500 w-full">
-              <div className="flex items-center gap-4 mb-8">
+              <div className="flex items-center gap-4 mb-6">
                 <button
                   onClick={() => setSelectedItem(null)}
                   className="p-2 bg-white shadow-sm border border-[#EAEAEA] rounded-full hover:bg-[#EAEAEA] transition-colors"
@@ -617,80 +617,138 @@ const App = () => {
                   <X size={20} />
                 </button>
                 <h2 className="text-2xl font-bold text-[#74739E]">
-                  {currentSection === 'alumnos' ? 'Detalle del Alumno' : 
+                  {currentSection === 'alumnos' ? 'Detalle del Alumno' :
                    currentSection === 'cxc' ? 'Detalle de Cuenta' : 'Detalle Financiero'}
                 </h2>
               </div>
 
-              <section className="bg-white p-10 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-[#EAEAEA] space-y-8">
-                <div className="flex justify-between items-start">
+              {/* Header card */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA] mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div>
-                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">
+                    <h1 className="text-3xl font-black text-slate-800 tracking-tight">
                       {currentSection === 'alumnos' ? selectedItem.nombre :
                        currentSection === 'cxc' ? selectedItem.concepto :
                        selectedItem.categoria}
                     </h1>
-                    <p className="text-slate-400 mt-1 font-mono text-sm">
+                    <p className="text-slate-400 mt-1 text-sm">
                       Registro Ref: ID-{selectedItem.id.toString().padStart(4, '0')}
                     </p>
                   </div>
-                  <span className={`px-6 py-2 rounded-full text-xs font-black uppercase border tracking-widest ${getStatusStyles(selectedItem.estado, currentSection)}`}>
+                  <span className={`px-5 py-2 rounded-full text-xs font-black uppercase border tracking-widest ${getStatusStyles(selectedItem.estado, currentSection)}`}>
                     {selectedItem.estado}
                   </span>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {currentSection === 'alumnos' ? (
-                    <>
-                      <div className="p-6 bg-[#F7F9FB] rounded-2xl border border-[#EAEAEA]">
-                        <h5 className="text-[10px] font-black text-[#74739E] mb-3 uppercase tracking-tighter">Información Académica</h5>
-                        <p className="text-slate-600 text-sm"><strong>Grado:</strong> {selectedItem.grado}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Tutor:</strong> {selectedItem.tutor}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Email:</strong> {selectedItem.email}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Teléfono:</strong> {selectedItem.telefono}</p>
+              {/* Detail cards - full width grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {currentSection === 'alumnos' ? (
+                  <>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Información Académica</h5>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Grado</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.grado}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Tutor</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.tutor}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Email</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.email}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-slate-400">Teléfono</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.telefono}</span>
+                        </div>
                       </div>
-                      <div className="p-6 bg-[#F7F9FB] rounded-2xl border border-[#EAEAEA]">
-                        <h5 className="text-[10px] font-black text-[#74739E] mb-3 uppercase tracking-tighter">Fecha de Inscripción</h5>
-                        <p className="text-lg font-bold text-slate-700">{selectedItem.fecha_inscripcion}</p>
-                        <p className="text-xs text-slate-400 mt-2">Estado actual: {selectedItem.status}</p>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Fecha de Inscripción</h5>
+                      <p className="text-2xl font-bold text-slate-700 mb-3">{selectedItem.fecha_inscripcion}</p>
+                      <p className="text-sm text-slate-400">Estado actual: {selectedItem.status}</p>
+                    </div>
+                  </>
+                ) : currentSection === 'cxc' ? (
+                  <>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Información de Pago</h5>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Alumno</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.alumno_nombre}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Concepto</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.concepto}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Monto Total</span>
+                          <span className="text-sm font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Monto Pagado</span>
+                          <span className="text-sm font-semibold text-green-600">${parseFloat(selectedItem.monto_pagado).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-slate-400">Saldo Pendiente</span>
+                          <span className="text-sm font-bold text-red-600">${(parseFloat(selectedItem.monto) - parseFloat(selectedItem.monto_pagado)).toFixed(2)}</span>
+                        </div>
                       </div>
-                    </>
-                  ) : currentSection === 'cxc' ? (
-                    <>
-                      <div className="p-6 bg-[#F7F9FB] rounded-2xl border border-[#EAEAEA]">
-                        <h5 className="text-[10px] font-black text-[#74739E] mb-3 uppercase tracking-tighter">Información de Pago</h5>
-                        <p className="text-slate-600 text-sm"><strong>Alumno:</strong> {selectedItem.alumno_nombre}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Concepto:</strong> {selectedItem.concepto}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Monto Total:</strong> ${selectedItem.monto}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Monto Pagado:</strong> ${selectedItem.monto_pagado}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Saldo Pendiente:</strong> ${(parseFloat(selectedItem.monto) - parseFloat(selectedItem.monto_pagado)).toFixed(2)}</p>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Fechas</h5>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Emisión</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.fecha_emision}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-slate-400">Vencimiento</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.fecha_vencimiento}</span>
+                        </div>
                       </div>
-                      <div className="p-6 bg-[#F7F9FB] rounded-2xl border border-[#EAEAEA]">
-                        <h5 className="text-[10px] font-black text-[#74739E] mb-3 uppercase tracking-tighter">Fechas</h5>
-                        <p className="text-slate-600 text-sm"><strong>Emisión:</strong> {selectedItem.fecha_emision}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Vencimiento:</strong> {selectedItem.fecha_vencimiento}</p>
-                        <p className="text-xs text-slate-400 mt-4">Estado: {selectedItem.estado}</p>
+                      <p className="text-sm text-slate-400 mt-4">Estado: {selectedItem.estado}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Información Financiera</h5>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Tipo</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.tipo}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Categoría</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.categoria}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Monto</span>
+                          <span className="text-lg font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                          <span className="text-sm text-slate-400">Método de Pago</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.metodo_pago || 'N/A'}</span>
+                        </div>
+                        <div className="py-2">
+                          <span className="text-sm text-slate-400 block mb-1">Descripción</span>
+                          <p className="text-sm text-slate-600">{selectedItem.descripcion || 'Sin descripción'}</p>
+                        </div>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-6 bg-[#F7F9FB] rounded-2xl border border-[#EAEAEA]">
-                        <h5 className="text-[10px] font-black text-[#74739E] mb-3 uppercase tracking-tighter">Información Financiera</h5>
-                        <p className="text-slate-600 text-sm"><strong>Tipo:</strong> {selectedItem.tipo}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Categoría:</strong> {selectedItem.categoria}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Monto:</strong> ${parseFloat(selectedItem.monto).toLocaleString()}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Método de Pago:</strong> {selectedItem.metodo_pago || 'N/A'}</p>
-                        <p className="text-slate-600 text-sm mt-2"><strong>Descripción:</strong> {selectedItem.descripcion || 'Sin descripción'}</p>
-                      </div>
-                      <div className="p-6 bg-[#F7F9FB] rounded-2xl border border-[#EAEAEA]">
-                        <h5 className="text-[10px] font-black text-[#74739E] mb-3 uppercase tracking-tighter">Fecha de Registro</h5>
-                        <p className="text-lg font-bold text-slate-700">{selectedItem.fecha}</p>
-                        <p className="text-xs text-slate-400 mt-2">Estado: {selectedItem.estado}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </section>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Fecha de Registro</h5>
+                      <p className="text-2xl font-bold text-slate-700 mb-3">{selectedItem.fecha}</p>
+                      <p className="text-sm text-slate-400">Estado: {selectedItem.estado}</p>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center">
