@@ -475,10 +475,10 @@ const App = () => {
 
       {/* MAIN STAGE */}
       <main className={`
-        fixed inset-0 z-30 md:static md:z-auto md:ml-80 transition-transform duration-300 mb-16 md:mb-0
+        fixed inset-0 z-30 md:static md:z-auto md:ml-80 md:min-h-screen transition-transform duration-300 mb-16 md:mb-0
         ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0 md:translate-x-0')}
       `}>
-        <div className="h-full flex flex-col p-6 md:p-10 overflow-y-auto bg-[#F7F9FB]">
+        <div className="min-h-full flex flex-col p-6 md:p-10 overflow-y-auto bg-[#F7F9FB]">
 
           {/* Lógica de Visualización basada en viewMode y selectedItem */}
           {loading ? (
@@ -499,7 +499,7 @@ const App = () => {
               </button>
             </div>
           ) : currentSection !== 'home' && selectedItem === '__table__' ? (
-            <div className="animate-in slide-in-from-right-10 duration-500 max-w-6xl mx-auto w-full">
+            <div className="animate-in slide-in-from-right-10 duration-500 w-full">
               <div className="flex items-center gap-4 mb-8">
                 <button
                   onClick={() => setSelectedItem(null)}
@@ -608,7 +608,7 @@ const App = () => {
               </section>
             </div>
           ) : selectedItem ? (
-            <div className="animate-in slide-in-from-right-10 duration-500 max-w-4xl mx-auto w-full">
+            <div className="animate-in slide-in-from-right-10 duration-500 w-full">
               <div className="flex items-center gap-4 mb-8">
                 <button
                   onClick={() => setSelectedItem(null)}
