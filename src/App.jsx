@@ -59,6 +59,7 @@ const App = () => {
   const loadMoreRef = React.useRef(null);
   const visibleCountRef = React.useRef(visibleCount);
   const filteredDataRef = React.useRef([]);
+  const listContainerRef = React.useRef(null);
 
   // Cargar etiquetas desde localStorage
   useEffect(() => {
@@ -269,22 +270,24 @@ const App = () => {
     filteredDataRef.current = filteredData;
   }, [filteredData.length]);
 
-  // IntersectionObserver para scroll infinito (estable, usa refs)
+  // IntersectionObserver para scroll infinito (stable, re-observes when count changes)
   useEffect(() => {
+    const container = listContainerRef.current;
+    const sentinel = loadMoreRef.current;
+    if (!container || !sentinel) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && filteredDataRef.current.length > visibleCountRef.current) {
           setVisibleCount(prev => prev + 8);
         }
       },
-      { root: null, rootMargin: '200px', threshold: 0.1 }
+      { root: container, rootMargin: '100px', threshold: 0 }
     );
 
-    const el = loadMoreRef.current;
-    if (el) observer.observe(el);
-
+    observer.observe(sentinel);
     return () => observer.disconnect();
-  }, []);
+  }, [visibleCount]);
 
   // Helper para estilos del Semáforo según sección
   const getStatusStyles = (status, section) => {
@@ -475,7 +478,7 @@ const App = () => {
         </div>
 
         {/* Contenido de la Lista */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        <div ref={listContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {currentSection === 'home' ? (
             <div className="text-center text-slate-400 py-10">
               <Home size={48} className="mx-auto mb-4 opacity-30" />
@@ -517,12 +520,13 @@ const App = () => {
                   </p>
                 </div>
               ))}
-              {/* Sentinel para scroll infinito */}
-              <div ref={loadMoreRef} className="h-8 flex items-center justify-center">
-                {visibleCount < filteredData.length && (
-                  <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin" />
-                )}
-              </div>
+              {/* Sentinel para scroll infinito — siempre renderizado */}
+              <div ref={loadMoreRef} className="h-2" />
+              {visibleCount < filteredData.length && (
+                <div className="text-center py-3">
+                  <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin mx-auto" />
+                </div>
+              )}
             </>
           )}
         </div>
