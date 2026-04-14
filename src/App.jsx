@@ -384,7 +384,7 @@ const App = () => {
 
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-full md:w-80 bg-white border-r border-[#EAEAEA] flex flex-col transition-transform duration-300
+        fixed inset-y-0 left-0 z-40 w-full md:static md:z-auto md:w-80 md:flex-shrink-0 bg-white border-r border-[#EAEAEA] flex flex-col transition-transform duration-300
         ${selectedItem ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
       `}>
         {/* Header Fijo (Área Seleccionada en Screenshot) */}
@@ -475,11 +475,11 @@ const App = () => {
 
       {/* MAIN STAGE */}
       <main className={`
-        fixed inset-0 z-30 md:static md:z-auto md:ml-80 md:min-h-screen transition-transform duration-300 mb-16 md:mb-0
-        ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0 md:translate-x-0')}
+        fixed inset-0 z-30 md:static md:z-auto md:flex-1 md:min-h-0 transition-transform duration-300 mb-16 md:mb-0
+        ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0')}
       `}>
-        <div className="min-h-full flex flex-col p-6 md:p-10 overflow-y-auto bg-[#F7F9FB]">
-
+        <div className="min-h-full flex flex-col overflow-y-auto bg-[#F7F9FB]">
+          <div className="w-full md:max-w-5xl md:mx-auto p-6 md:p-10">
           {/* Lógica de Visualización basada en viewMode y selectedItem */}
           {loading ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
@@ -763,6 +763,7 @@ const App = () => {
               </p>
             </div>
           )}
+          </div>
         </div>
       </main>
 
