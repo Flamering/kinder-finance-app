@@ -513,23 +513,46 @@ const App = () => {
               </button>
             </div>
           ) : currentSection !== 'home' && showTableView && !selectedItem ? (
-            <div className="max-w-6xl mx-auto w-full">
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold text-[#74739E]">
-                  {currentSection === 'alumnos' ? 'Gestión de Alumnos' : 
+            <div className="animate-in slide-in-from-right-10 duration-500 max-w-6xl mx-auto w-full">
+              <div className="flex items-center gap-4 mb-8">
+                <button
+                  onClick={() => setShowTableView(false)}
+                  className="p-2 bg-white shadow-sm border border-[#EAEAEA] rounded-full hover:bg-[#EAEAEA] transition-colors"
+                >
+                  <X size={20} />
+                </button>
+                <h2 className="text-2xl font-bold text-[#74739E]">
+                  {currentSection === 'alumnos' ? 'Gestión de Alumnos' :
                    currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Gestión Financiera'}
-                </h1>
-                <p className="text-sm text-slate-400">
-                  {currentSection === 'alumnos' ? 'Control de alumnos y su información académica.' :
-                   currentSection === 'cxc' ? 'Seguimiento de pagos y cuentas pendientes.' :
-                   'Registro de ingresos y gastos del kinder.'}
-                </p>
+                </h2>
               </div>
-              <CRUDTable
-                data={filteredData}
-                onSelect={setSelectedItem}
-                section={currentSection}
-              />
+
+              <section className="bg-white p-10 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-[#EAEAEA] space-y-8">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">
+                      {currentSection === 'alumnos' ? 'Alumnos' :
+                       currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
+                    </h1>
+                    <p className="text-slate-400 mt-1 text-sm">
+                      {currentSection === 'alumnos' ? 'Control de alumnos y su información académica.' :
+                       currentSection === 'cxc' ? 'Seguimiento de pagos y cuentas pendientes.' :
+                       'Registro de ingresos y gastos del kinder.'}
+                    </p>
+                  </div>
+                  <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-[#F7F9FB] border-[#EAEAEA] text-slate-500">
+                    {filteredData.length} registros
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <CRUDTable
+                    data={filteredData}
+                    onSelect={setSelectedItem}
+                    section={currentSection}
+                  />
+                </div>
+              </section>
             </div>
           ) : selectedItem ? (
             <div className="animate-in slide-in-from-right-10 duration-500 max-w-4xl mx-auto w-full">
