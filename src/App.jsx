@@ -473,7 +473,7 @@ const App = () => {
 
       {/* MAIN STAGE */}
       <main className={`
-        fixed inset-0 z-30 md:static md:z-auto transition-transform duration-300 mb-16 md:mb-0
+        fixed inset-0 z-30 md:static md:z-auto md:ml-80 transition-transform duration-300 mb-16 md:mb-0
         ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0 md:translate-x-0')}
       `}>
         <div className="h-full flex flex-col p-6 md:p-10 overflow-y-auto bg-[#F7F9FB]">
