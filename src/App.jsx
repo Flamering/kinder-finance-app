@@ -273,21 +273,21 @@ const App = () => {
   // IntersectionObserver para scroll infinito (stable, re-observes when count changes)
   useEffect(() => {
     const container = listContainerRef.current;
-    const sentinel = loadMoreRef.current;
-    if (!container || !sentinel) return;
+    if (!container) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && filteredDataRef.current.length > visibleCountRef.current) {
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // Si el scroll está a 80px o menos del fondo, cargar más
+      if (scrollHeight - scrollTop - clientHeight < 80) {
+        if (filteredDataRef.current.length > visibleCountRef.current) {
           setVisibleCount(prev => prev + 8);
         }
-      },
-      { root: container, rootMargin: '100px', threshold: 0 }
-    );
+      }
+    };
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [visibleCount]);
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Helper para estilos del Semáforo según sección
   const getStatusStyles = (status, section) => {
@@ -520,8 +520,7 @@ const App = () => {
                   </p>
                 </div>
               ))}
-              {/* Sentinel para scroll infinito — siempre renderizado */}
-              <div ref={loadMoreRef} className="h-2" />
+              {/* Indicador de carga más items */}
               {visibleCount < filteredData.length && (
                 <div className="text-center py-3">
                   <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -537,7 +536,7 @@ const App = () => {
         fixed inset-0 z-30 md:static md:z-auto md:flex-1 md:min-h-0 transition-transform duration-300 mb-16 md:mb-0
         ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0')}
       `}>
-        <div className="min-h-full flex flex-col overflow-y-auto bg-[#F7F9FB]">
+        <div className="h-full overflow-y-auto bg-[#F7F9FB]">
           <div className="w-full md:max-w-5xl md:mx-auto p-6 md:p-10">
           {/* Lógica de Visualización basada en viewMode y selectedItem */}
           {loading ? (
