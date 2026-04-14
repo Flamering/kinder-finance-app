@@ -54,6 +54,10 @@ const App = () => {
   const [newTag, setNewTag] = useState('');
   const [showNewTagInput, setShowNewTagInput] = useState(false);
 
+  // Estado para scroll infinito (chunks de 10)
+  const [visibleCount, setVisibleCount] = useState(10);
+  const loadMoreRef = React.useRef(null);
+
   // Cargar etiquetas desde localStorage
   useEffect(() => {
     const savedTags = localStorage.getItem('kinder-finance-tags');
@@ -113,10 +117,33 @@ const App = () => {
   // Al cambiar de sección, limpiar selección y activar tabla en desktop
   useEffect(() => {
     setSelectedItem(null);
+    setVisibleCount(10);
     if (currentSection !== 'home' && !isMobile) {
       setSelectedItem('__table__');
     }
   }, [currentSection, isMobile]);
+
+  // Reset visible count cuando cambia la búsqueda
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [searchTerm]);
+
+  // IntersectionObserver para scroll infinito
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && filteredData.length > visibleCount) {
+          setVisibleCount(prev => prev + 10);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+
+    const el = loadMoreRef.current;
+    if (el) observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [filteredData.length, visibleCount]);
 
   // Cargar datos al cambiar de sección
   useEffect(() => {
@@ -448,35 +475,46 @@ const App = () => {
             <div className="text-center text-slate-400 py-10">
               <p className="text-sm">No hay registros para mostrar</p>
             </div>
-          ) : filteredData.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => setSelectedItem(item)}
-              className={`
-                p-4 rounded-2xl cursor-pointer transition-all border
-                ${selectedItem?.id === item.id
-                  ? 'bg-[#F7F9FB] border-[#74739E] shadow-inner'
-                  : 'bg-white border-[#EAEAEA] hover:border-[#A7C7E7] hover:shadow-sm'}
-              `}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase border ${getStatusStyles(item.estado, currentSection)}`}>
-                  {item.estado}
-                </span>
-                <ChevronRight size={14} className="text-slate-300" />
-              </div>
-              <h4 className="font-semibold text-slate-700 text-sm">
-                {currentSection === 'alumnos' ? item.nombre :
-                 currentSection === 'cxc' ? `${item.alumno_nombre} - ${item.concepto}` :
-                 `${item.tipo}: ${item.categoria}`}
-              </h4>
-              <p className="text-[11px] text-slate-400 line-clamp-1 mt-1">
-                {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}` :
-                 currentSection === 'cxc' ? `$${item.monto} • Vence: ${item.fecha_vencimiento}` :
-                 `$${parseFloat(item.monto).toLocaleString()} • ${item.fecha}`}
-              </p>
-            </div>
-          ))}
+          ) : (
+            <>
+              {filteredData.slice(0, visibleCount).map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className={`
+                    p-4 rounded-2xl cursor-pointer transition-all border
+                    ${selectedItem?.id === item.id
+                      ? 'bg-[#F7F9FB] border-[#74739E] shadow-inner'
+                      : 'bg-white border-[#EAEAEA] hover:border-[#A7C7E7] hover:shadow-sm'}
+                  `}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase border ${getStatusStyles(item.estado, currentSection)}`}>
+                      {item.estado}
+                    </span>
+                    <ChevronRight size={14} className="text-slate-300" />
+                  </div>
+                  <h4 className="font-semibold text-slate-700 text-sm">
+                    {currentSection === 'alumnos' ? item.nombre :
+                     currentSection === 'cxc' ? `${item.alumno_nombre} - ${item.concepto}` :
+                     `${item.tipo}: ${item.categoria}`}
+                  </h4>
+                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-1">
+                    {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}` :
+                     currentSection === 'cxc' ? `$${item.monto} • Vence: ${item.fecha_vencimiento}` :
+                     `$${parseFloat(item.monto).toLocaleString()} • ${item.fecha}`}
+                  </p>
+                </div>
+              ))}
+              {/* Sentinel para scroll infinito */}
+              <div ref={loadMoreRef} className="h-1" />
+              {visibleCount < filteredData.length && (
+                <div className="text-center py-4">
+                  <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin mx-auto" />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </aside>
 
