@@ -383,7 +383,7 @@ const App = () => {
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-full md:w-80 bg-white border-r border-[#EAEAEA] flex flex-col transition-transform duration-300
-        ${selectedItem && selectedItem !== '__table__' ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
+        ${selectedItem ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
       `}>
         {/* Header Fijo (Área Seleccionada en Screenshot) */}
         <div className="p-4 space-y-3 bg-white border-b border-[#EAEAEA]">
@@ -473,7 +473,8 @@ const App = () => {
 
       {/* MAIN STAGE */}
       <main className={`
-        flex-1 relative transition-all duration-300 mb-16 md:mb-0 md:ml-80
+        fixed inset-0 z-30 md:static md:z-auto transition-transform duration-300 mb-16 md:mb-0
+        ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0 md:translate-x-0')}
       `}>
         <div className="h-full flex flex-col p-6 md:p-10 overflow-y-auto bg-[#F7F9FB]">
 
