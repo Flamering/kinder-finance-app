@@ -34,7 +34,6 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showTableView, setShowTableView] = useState(false);
   const [currentSection, setCurrentSection] = useState('home');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -104,27 +103,17 @@ const App = () => {
   // Detectar si es mobile
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // En desktop, mostrar tabla por defecto cuando hay sección
-      if (!mobile && currentSection !== 'home') {
-        setShowTableView(true);
-      }
+      setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Al cambiar de sección, mostrar tabla en desktop
+  // Al cambiar de sección, limpiar selección
   useEffect(() => {
-    if (currentSection !== 'home' && !isMobile) {
-      setShowTableView(true);
-    } else if (isMobile) {
-      setShowTableView(false);
-    }
     setSelectedItem(null);
-  }, [currentSection, isMobile]);
+  }, [currentSection]);
 
   // Cargar datos al cambiar de sección
   useEffect(() => {
@@ -394,8 +383,7 @@ const App = () => {
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-full md:w-80 bg-white border-r border-[#EAEAEA] flex flex-col transition-transform duration-300
-        ${selectedItem || (showTableView && !isMobile) ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
-        ${isMobile && showTableView ? '-translate-x-full' : ''}
+        ${selectedItem && selectedItem !== '__table__' ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
       `}>
         {/* Header Fijo (Área Seleccionada en Screenshot) */}
         <div className="p-4 space-y-3 bg-white border-b border-[#EAEAEA]">
@@ -425,16 +413,11 @@ const App = () => {
 
             {/* Botón de Cambio de Vista */}
             <button
-              onClick={() => {
-                setShowTableView(!showTableView);
-                if (showTableView) {
-                  setSelectedItem(null);
-                }
-              }}
-              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${showTableView ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200'}`}
-              title={showTableView ? "Volver a Lista" : "Mostrar Tabla"}
+              onClick={() => setSelectedItem(selectedItem === '__table__' ? null : '__table__')}
+              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${selectedItem === '__table__' ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200'}`}
+              title={selectedItem === '__table__' ? "Volver a Lista" : "Mostrar Tabla"}
             >
-              {showTableView ? <LayoutList size={18} /> : <TableIcon size={18} />}
+              {selectedItem === '__table__' ? <LayoutList size={18} /> : <TableIcon size={18} />}
             </button>
 
             <button 
@@ -512,11 +495,11 @@ const App = () => {
                 Reintentar
               </button>
             </div>
-          ) : currentSection !== 'home' && showTableView && !selectedItem ? (
+          ) : currentSection !== 'home' && selectedItem === '__table__' ? (
             <div className="animate-in slide-in-from-right-10 duration-500 max-w-6xl mx-auto w-full">
               <div className="flex items-center gap-4 mb-8">
                 <button
-                  onClick={() => setShowTableView(false)}
+                  onClick={() => setSelectedItem(null)}
                   className="p-2 bg-white shadow-sm border border-[#EAEAEA] rounded-full hover:bg-[#EAEAEA] transition-colors"
                 >
                   <X size={20} />
@@ -648,9 +631,7 @@ const App = () => {
               <p className="text-slate-400 max-w-md mx-auto mt-2">
                 {currentSection === 'home'
                   ? "Bienvenido al sistema de gestión del kinder. Selecciona una sección en la barra inferior para comenzar."
-                  : showTableView 
-                    ? "No hay elementos para mostrar."
-                    : "Haz clic en el botón de tabla para ver los registros."}
+                  : "Haz clic en el botón de tabla para ver los registros."}
               </p>
             </div>
           )}
@@ -675,7 +656,6 @@ const App = () => {
                 setCurrentSection(tab.id);
                 setSelectedItem(null);
                 setSearchTerm('');
-                setViewMode('list');
               }}
               className="relative flex flex-col items-center justify-center w-16 h-full transition-all"
             >
