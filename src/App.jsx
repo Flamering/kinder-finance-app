@@ -110,10 +110,13 @@ const App = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Al cambiar de sección, limpiar selección
+  // Al cambiar de sección, limpiar selección y activar tabla en desktop
   useEffect(() => {
     setSelectedItem(null);
-  }, [currentSection]);
+    if (currentSection !== 'home' && !isMobile) {
+      setSelectedItem('__table__');
+    }
+  }, [currentSection, isMobile]);
 
   // Cargar datos al cambiar de sección
   useEffect(() => {
@@ -441,6 +444,10 @@ const App = () => {
               <p className="text-sm">Bienvenido al sistema de gestión</p>
               <p className="text-xs mt-2">Selecciona una sección para comenzar</p>
             </div>
+          ) : filteredData.length === 0 ? (
+            <div className="text-center text-slate-400 py-10">
+              <p className="text-sm">No hay registros para mostrar</p>
+            </div>
           ) : filteredData.map((item) => (
             <div
               key={item.id}
@@ -752,15 +759,32 @@ const App = () => {
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-24 h-24 bg-[#EAEAEA] rounded-[2rem] flex items-center justify-center mb-6 text-[#74739E]">
-                <Home size={48} />
-              </div>
-              <h2 className="text-2xl font-bold text-[#74739E]">Dashboard Principal</h2>
-              <p className="text-slate-400 max-w-md mx-auto mt-2">
-                {currentSection === 'home'
-                  ? "Bienvenido al sistema de gestión del kinder. Selecciona una sección en la barra inferior para comenzar."
-                  : "Haz clic en el botón de tabla para ver los registros."}
-              </p>
+              {currentSection === 'home' ? (
+                <>
+                  <div className="w-24 h-24 bg-[#EAEAEA] rounded-[2rem] flex items-center justify-center mb-6 text-[#74739E]">
+                    <Home size={48} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-[#74739E]">Dashboard Principal</h2>
+                  <p className="text-slate-400 max-w-md mx-auto mt-2">
+                    Bienvenido al sistema de gestión del kinder. Selecciona una sección en la barra inferior para comenzar.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-24 h-24 bg-[#EAEAEA] rounded-[2rem] flex items-center justify-center mb-6 text-[#74739E]">
+                    {currentSection === 'alumnos' ? <Users size={48} /> :
+                     currentSection === 'cxc' ? <DollarSign size={48} /> :
+                     <TrendingUp size={48} />}
+                  </div>
+                  <h2 className="text-2xl font-bold text-[#74739E]">
+                    {currentSection === 'alumnos' ? 'Alumnos' :
+                     currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
+                  </h2>
+                  <p className="text-slate-400 max-w-md mx-auto mt-2">
+                    No hay registros para mostrar. Haz clic en el botón + para crear uno nuevo.
+                  </p>
+                </>
+              )}
             </div>
           )}
           </div>
