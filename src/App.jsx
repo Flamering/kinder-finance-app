@@ -128,23 +128,6 @@ const App = () => {
     setVisibleCount(10);
   }, [searchTerm]);
 
-  // IntersectionObserver para scroll infinito
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && filteredData.length > visibleCount) {
-          setVisibleCount(prev => prev + 10);
-        }
-      },
-      { rootMargin: '100px' }
-    );
-
-    const el = loadMoreRef.current;
-    if (el) observer.observe(el);
-
-    return () => observer.disconnect();
-  }, [filteredData.length, visibleCount]);
-
   // Cargar datos al cambiar de sección
   useEffect(() => {
     if (currentSection === 'home' || !currentSection) return;
@@ -274,6 +257,23 @@ const App = () => {
   };
 
   const filteredData = getFilteredData();
+
+  // IntersectionObserver para scroll infinito
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && filteredData.length > visibleCount) {
+          setVisibleCount(prev => prev + 10);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+
+    const el = loadMoreRef.current;
+    if (el) observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [filteredData.length, visibleCount]);
 
   // Helper para estilos del Semáforo según sección
   const getStatusStyles = (status, section) => {
