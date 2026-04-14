@@ -54,9 +54,11 @@ const App = () => {
   const [newTag, setNewTag] = useState('');
   const [showNewTagInput, setShowNewTagInput] = useState(false);
 
-  // Estado para scroll infinito (chunks de 10)
-  const [visibleCount, setVisibleCount] = useState(10);
+  // Estado para scroll infinito (chunks de 8)
+  const [visibleCount, setVisibleCount] = useState(8);
   const loadMoreRef = React.useRef(null);
+  const visibleCountRef = React.useRef(visibleCount);
+  const filteredDataRef = React.useRef([]);
 
   // Cargar etiquetas desde localStorage
   useEffect(() => {
@@ -117,7 +119,7 @@ const App = () => {
   // Al cambiar de sección, limpiar selección y activar tabla en desktop
   useEffect(() => {
     setSelectedItem(null);
-    setVisibleCount(10);
+    setVisibleCount(8);
     if (currentSection !== 'home' && !isMobile) {
       setSelectedItem('__table__');
     }
@@ -125,7 +127,7 @@ const App = () => {
 
   // Reset visible count cuando cambia la búsqueda
   useEffect(() => {
-    setVisibleCount(10);
+    setVisibleCount(8);
   }, [searchTerm]);
 
   // Cargar datos al cambiar de sección
@@ -258,22 +260,31 @@ const App = () => {
 
   const filteredData = getFilteredData();
 
-  // IntersectionObserver para scroll infinito
+  // Sync refs for IntersectionObserver
+  React.useEffect(() => {
+    visibleCountRef.current = visibleCount;
+  }, [visibleCount]);
+
+  React.useEffect(() => {
+    filteredDataRef.current = filteredData;
+  }, [filteredData.length]);
+
+  // IntersectionObserver para scroll infinito (estable, usa refs)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && filteredData.length > visibleCount) {
-          setVisibleCount(prev => prev + 10);
+        if (entries[0].isIntersecting && filteredDataRef.current.length > visibleCountRef.current) {
+          setVisibleCount(prev => prev + 8);
         }
       },
-      { rootMargin: '100px' }
+      { root: null, rootMargin: '200px', threshold: 0.1 }
     );
 
     const el = loadMoreRef.current;
     if (el) observer.observe(el);
 
     return () => observer.disconnect();
-  }, [filteredData.length, visibleCount]);
+  }, []);
 
   // Helper para estilos del Semáforo según sección
   const getStatusStyles = (status, section) => {
@@ -507,12 +518,11 @@ const App = () => {
                 </div>
               ))}
               {/* Sentinel para scroll infinito */}
-              <div ref={loadMoreRef} className="h-1" />
-              {visibleCount < filteredData.length && (
-                <div className="text-center py-4">
-                  <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin mx-auto" />
-                </div>
-              )}
+              <div ref={loadMoreRef} className="h-8 flex items-center justify-center">
+                {visibleCount < filteredData.length && (
+                  <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
             </>
           )}
         </div>
