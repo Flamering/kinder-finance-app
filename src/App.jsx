@@ -282,7 +282,6 @@ const App = () => {
         case 'alumnos':
           return (
             <>
-              <td className="p-4 text-xs font-mono text-slate-400">#{item.id.toString().padStart(3, '0')}</td>
               <td className="p-4">
                 <div className="font-semibold text-slate-700 text-sm">{item.nombre}</div>
                 <div className="text-[10px] text-slate-400">{item.grado} • {item.tutor}</div>
@@ -292,12 +291,12 @@ const App = () => {
                   {item.estado}
                 </span>
               </td>
+              <td className="p-4 text-sm text-slate-500">{item.fecha_inscripcion || '—'}</td>
             </>
           );
         case 'cxc':
           return (
             <>
-              <td className="p-4 text-xs font-mono text-slate-400">#{item.id.toString().padStart(3, '0')}</td>
               <td className="p-4">
                 <div className="font-semibold text-slate-700 text-sm">{item.alumno_nombre}</div>
                 <div className="text-[10px] text-slate-400">{item.concepto}</div>
@@ -307,21 +306,22 @@ const App = () => {
                   {item.estado}
                 </span>
               </td>
+              <td className="p-4 text-sm font-semibold text-slate-700">${parseFloat(item.monto).toLocaleString()}</td>
             </>
           );
         case 'finanzas':
           return (
             <>
-              <td className="p-4 text-xs font-mono text-slate-400">#{item.id.toString().padStart(3, '0')}</td>
               <td className="p-4">
                 <div className="font-semibold text-slate-700 text-sm">{item.categoria}</div>
-                <div className="text-[10px] text-slate-400">{item.tipo} • ${parseFloat(item.monto).toLocaleString()}</div>
+                <div className="text-[10px] text-slate-400">{item.tipo} • {item.descripcion || 'Sin descripción'}</div>
               </td>
               <td className="p-4 text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-bold border ${getStatusStyles(item.estado, section)}`}>
                   {item.estado}
                 </span>
               </td>
+              <td className="p-4 text-sm font-semibold text-slate-700">${parseFloat(item.monto).toLocaleString()}</td>
             </>
           );
         default:
@@ -335,11 +335,13 @@ const App = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#EAEAEA] border-b border-[#EAEAEA]">
-                <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest">ID</th>
                 <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest">
                   {section === 'alumnos' ? 'Alumno' : section === 'cxc' ? 'Concepto' : 'Categoría'}
                 </th>
                 <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest text-center">Estado</th>
+                <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest">
+                  {section === 'alumnos' ? 'Inscripción' : section === 'cxc' ? 'Monto' : 'Monto'}
+                </th>
                 <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest text-right">Acciones</th>
               </tr>
             </thead>
@@ -359,9 +361,9 @@ const App = () => {
                       <button className="p-2 text-[#74739E] hover:bg-[#74739E]/10 rounded-lg transition-colors" title="Editar">
                         <Pencil size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleSoftDelete(item.id)}
-                        className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors" 
+                        className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 size={16} />
@@ -512,6 +514,73 @@ const App = () => {
               </div>
 
               <section className="bg-white p-10 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-[#EAEAEA] space-y-8">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {currentSection === 'alumnos' && (() => {
+                    const activos = filteredData.filter(i => i.estado === 'Activo').length;
+                    const morosos = filteredData.filter(i => i.estado === 'Moroso').length;
+                    const inactivos = filteredData.filter(i => i.estado === 'Inactivo').length;
+                    return (
+                      <>
+                        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
+                          <div className="text-2xl font-black text-[#74739E]">{activos}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Activos</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
+                          <div className="text-2xl font-black text-red-600">{morosos}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Morosos</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                          <div className="text-2xl font-black text-slate-600">{inactivos}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Inactivos</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                  {currentSection === 'cxc' && (() => {
+                    const pendientes = filteredData.filter(i => i.estado === 'Pendiente' || i.estado === 'Parcial').length;
+                    const vencidos = filteredData.filter(i => i.estado === 'Vencido').length;
+                    const totalCobrar = filteredData.reduce((sum, i) => sum + (parseFloat(i.monto) - parseFloat(i.monto_pagado || 0)), 0);
+                    return (
+                      <>
+                        <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
+                          <div className="text-2xl font-black text-yellow-700">{pendientes}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Pendientes</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
+                          <div className="text-2xl font-black text-red-600">{vencidos}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Vencidos</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
+                          <div className="text-2xl font-black text-[#74739E]">${totalCobrar.toLocaleString()}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Total por Cobrar</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                  {currentSection === 'finanzas' && (() => {
+                    const ingresos = filteredData.filter(i => i.tipo === 'Ingreso').reduce((s, i) => s + parseFloat(i.monto), 0);
+                    const gastos = filteredData.filter(i => i.tipo === 'Gasto').reduce((s, i) => s + parseFloat(i.monto), 0);
+                    const pendientes = filteredData.filter(i => i.estado === 'Pendiente').length;
+                    return (
+                      <>
+                        <div className="p-4 rounded-2xl bg-green-50 border border-green-200">
+                          <div className="text-2xl font-black text-green-600">+${ingresos.toLocaleString()}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Ingresos</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
+                          <div className="text-2xl font-black text-red-600">-${gastos.toLocaleString()}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Gastos</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
+                          <div className="text-2xl font-black text-yellow-700">{pendientes}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Pendientes</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
                 <div className="flex justify-between items-start">
                   <div>
                     <h1 className="text-4xl font-black text-slate-800 tracking-tight">
