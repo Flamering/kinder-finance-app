@@ -61,7 +61,8 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
   const handleSubmit = async () => {
     setFormErrors({});
     try {
-      await onSave(formData);
+      const enrichedData = { ...getDefaults(section), ...formData };
+      await onSave(enrichedData);
       onClose();
     } catch (err) {
       setFormErrors({ general: err.message });
