@@ -18,7 +18,8 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { supabase } from './lib/supabase';
+import RecordModal from './components/RecordModal';
+import { fetchSectionData, createRecord, updateRecord, softDeleteRecord } from './lib/api';
 
 // --- Constantes de Diseño ---
 const COLORS = {
@@ -45,14 +46,12 @@ const App = () => {
   // Estados para filtros
   const [filters, setFilters] = useState({});
 
-  // Estados para formulario de creación
-  const [formData, setFormData] = useState({});
-  const [formErrors, setFormErrors] = useState({});
+  // Estados para formulario de edición
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   // Estados para sistema de etiquetas
   const [tags, setTags] = useState({ alumnos: [], cxc: [], finanzas: [] });
-  const [newTag, setNewTag] = useState('');
-  const [showNewTagInput, setShowNewTagInput] = useState(false);
 
   // Estado para scroll infinito (chunks de 8)
   const [visibleCount, setVisibleCount] = useState(8);
@@ -89,24 +88,6 @@ const App = () => {
     }
   }, [tags]);
 
-  // Función para agregar nueva etiqueta
-  const addTag = (section) => {
-    if (!newTag.trim()) return;
-    const tagList = tags[section] || [];
-    if (!tagList.includes(newTag.trim())) {
-      const updatedTags = { ...tags, [section]: [...tagList, newTag.trim()] };
-      setTags(updatedTags);
-    }
-    setNewTag('');
-    setShowNewTagInput(false);
-  };
-
-  // Función para eliminar etiqueta
-  const removeTag = (section, tagToRemove) => {
-    const updatedTags = { ...tags, [section]: tags[section].filter(t => t !== tagToRemove) };
-    setTags(updatedTags);
-  };
-
   // Detectar si es mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -140,14 +121,8 @@ const App = () => {
       setError(null);
       
       try {
-        const { data: result, error: err } = await supabase
-          .from(currentSection)
-          .select('*')
-          .eq('eliminado', false)
-          .order('created_at', { ascending: false });
-        
-        if (err) throw err;
-        setData(prev => ({ ...prev, [currentSection]: result || [] }));
+        const result = await fetchSectionData(currentSection);
+        setData(prev => ({ ...prev, [currentSection]: result }));
       } catch (err) {
         console.error(`Error fetching ${currentSection}:`, err);
         setError(`Error al cargar ${currentSection}: ${err.message}`);
@@ -164,21 +139,12 @@ const App = () => {
   // Función de Soft Delete
   const handleSoftDelete = async (itemId) => {
     if (!currentSection || currentSection === 'home') return;
-    
     try {
-      const { error: err } = await supabase
-        .from(currentSection)
-        .update({ eliminado: true })
-        .eq('id', itemId);
-      
-      if (err) throw err;
-      
-      // Actualizar estado local
+      await softDeleteRecord(currentSection, itemId);
       setData(prev => ({
         ...prev,
         [currentSection]: prev[currentSection].filter(item => item.id !== itemId)
       }));
-      
       if (selectedItem?.id === itemId) setSelectedItem(null);
     } catch (err) {
       console.error('Error al eliminar:', err);
@@ -187,36 +153,44 @@ const App = () => {
   };
 
   // Función para crear registro
-  const handleCreate = async () => {
+  const handleCreate = async (formData) => {
     if (!currentSection || currentSection === 'home') return;
-    
-    setFormErrors({});
-    
     try {
-      const recordToCreate = {
-        ...formData,
-        eliminado: false,
-      };
-
-      const { data: result, error: err } = await supabase
-        .from(currentSection)
-        .insert([recordToCreate])
-        .select();
-      
-      if (err) throw err;
-      
-      // Actualizar estado local
+      const result = await createRecord(currentSection, formData);
       setData(prev => ({
         ...prev,
-        [currentSection]: [result[0], ...prev[currentSection]]
+        [currentSection]: [result, ...prev[currentSection]]
       }));
-      
-      // Limpiar formulario
-      setFormData({});
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error al crear:', err);
-      setFormErrors({ general: err.message });
+      throw err;
+    }
+  };
+
+  // Función para editar registro
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  // Función para actualizar registro
+  const handleUpdate = async (formData) => {
+    if (!currentSection || currentSection === 'home') return;
+    try {
+      const { id, created_at, updated_at, eliminado, ...cleanData } = formData;
+      const result = await updateRecord(currentSection, id, cleanData);
+      setData(prev => ({
+        ...prev,
+        [currentSection]: prev[currentSection].map(item =>
+          item.id === id ? result : item
+        )
+      }));
+      setSelectedItem(result);
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error('Error al actualizar:', err);
+      throw err;
     }
   };
 
@@ -402,7 +376,11 @@ const App = () => {
                       >
                         <Eye size={16} />
                       </button>
-                      <button className="p-2 text-[#74739E] hover:bg-[#74739E]/10 rounded-lg transition-colors" title="Editar">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="p-2 text-[#74739E] hover:bg-[#74739E]/10 rounded-lg transition-colors"
+                        title="Editar"
+                      >
                         <Pencil size={16} />
                       </button>
                       <button
@@ -678,6 +656,13 @@ const App = () => {
                   {currentSection === 'alumnos' ? 'Detalle del Alumno' :
                    currentSection === 'cxc' ? 'Detalle de Cuenta' : 'Detalle Financiero'}
                 </h2>
+                <button
+                  onClick={() => handleEdit(selectedItem)}
+                  className="ml-auto p-2 bg-[#A7C7E7] text-white rounded-xl hover:brightness-105 transition-all"
+                  title="Editar"
+                >
+                  <Pencil size={18} />
+                </button>
               </div>
 
               {/* Header card */}
@@ -1012,302 +997,25 @@ const App = () => {
         </div>
       )}
 
-      {/* MODAL DE CREACIÓN */}
-      {isModalOpen && currentSection !== 'home' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-[#F7F9FB] rounded-[2rem] shadow-2xl p-8 border border-white animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-black text-[#74739E] mb-6">
-              {currentSection === 'alumnos' ? 'Nuevo Alumno' :
-               currentSection === 'cxc' ? 'Nueva Cuenta por Cobrar' : 'Nuevo Registro Financiero'}
-            </h3>
-
-            {formErrors.general && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                {formErrors.general}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {currentSection === 'alumnos' && (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno *</label>
-                    <input
-                      type="text"
-                      value={formData.nombre || ''}
-                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grado *</label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {tags.alumnos.map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setFormData({ ...formData, grado: tag })}
-                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData.grado === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setShowNewTagInput(!showNewTagInput)}
-                        className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
-                      >
-                        + Nuevo
-                      </button>
-                    </div>
-                    {showNewTagInput && (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addTag('alumnos')}
-                          placeholder="Nueva etiqueta..."
-                          className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                        />
-                        <button onClick={() => addTag('alumnos')} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tutor</label>
-                    <input
-                      type="text"
-                      value={formData.tutor || ''}
-                      onChange={(e) => setFormData({ ...formData, tutor: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Teléfono</label>
-                    <input
-                      type="text"
-                      value={formData.telefono || ''}
-                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email</label>
-                    <input
-                      type="email"
-                      value={formData.email || ''}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
-                    <select
-                      value={formData.estado || 'Activo'}
-                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    >
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                      <option value="Moroso">Moroso</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {currentSection === 'cxc' && (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno *</label>
-                    <input
-                      type="text"
-                      value={formData.alumno_nombre || ''}
-                      onChange={(e) => setFormData({ ...formData, alumno_nombre: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Concepto *</label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {tags.cxc.map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setFormData({ ...formData, concepto: tag })}
-                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData.concepto === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setShowNewTagInput(!showNewTagInput)}
-                        className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
-                      >
-                        + Nuevo
-                      </button>
-                    </div>
-                    {showNewTagInput && (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addTag('cxc')}
-                          placeholder="Nuevo concepto..."
-                          className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                        />
-                        <button onClick={() => addTag('cxc')} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.monto || ''}
-                      onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Fecha de Vencimiento</label>
-                    <input
-                      type="date"
-                      value={formData.fecha_vencimiento || ''}
-                      onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
-                    <select
-                      value={formData.estado || 'Pendiente'}
-                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Pagado">Pagado</option>
-                      <option value="Parcial">Parcial</option>
-                      <option value="Vencido">Vencido</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {currentSection === 'finanzas' && (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tipo *</label>
-                    <select
-                      value={formData.tipo || 'Ingreso'}
-                      onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    >
-                      <option value="Ingreso">Ingreso</option>
-                      <option value="Gasto">Gasto</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Categoría *</label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {tags.finanzas.map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setFormData({ ...formData, categoria: tag })}
-                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData.categoria === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setShowNewTagInput(!showNewTagInput)}
-                        className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
-                      >
-                        + Nuevo
-                      </button>
-                    </div>
-                    {showNewTagInput && (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addTag('finanzas')}
-                          placeholder="Nueva categoría..."
-                          className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                        />
-                        <button onClick={() => addTag('finanzas')} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.monto || ''}
-                      onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Descripción</label>
-                    <textarea
-                      value={formData.descripcion || ''}
-                      onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7] resize-none"
-                      rows="3"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Método de Pago</label>
-                    <select
-                      value={formData.metodo_pago || ''}
-                      onChange={(e) => setFormData({ ...formData, metodo_pago: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    >
-                      <option value="">Seleccionar...</option>
-                      <option value="Transferencia">Transferencia</option>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
-                    <select
-                      value={formData.estado || 'Completado'}
-                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                    >
-                      <option value="Completado">Completado</option>
-                      <option value="Pendiente">Pendiente</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-4 bg-[#EAEAEA] text-[#74739E] font-black rounded-xl active:scale-95 transition-all"
-                >
-                  CANCELAR
-                </button>
-                <button
-                  onClick={handleCreate}
-                  className="flex-1 py-4 bg-[#A7C7E7] text-white font-black rounded-xl shadow-lg shadow-[#A7C7E7]/30 active:scale-95 transition-all"
-                >
-                  CREAR
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <RecordModal
+        isOpen={isModalOpen && currentSection !== 'home'}
+        onClose={() => setIsModalOpen(false)}
+        section={currentSection}
+        mode="create"
+        tags={tags}
+        onTagsChange={(newTags) => setTags(newTags)}
+        onSave={handleCreate}
+      />
+      <RecordModal
+        isOpen={isEditModalOpen && currentSection !== 'home' && editingItem !== null}
+        onClose={() => { setIsEditModalOpen(false); setEditingItem(null); }}
+        section={currentSection}
+        mode="edit"
+        initialData={editingItem}
+        tags={tags}
+        onTagsChange={(newTags) => setTags(newTags)}
+        onSave={handleUpdate}
+      />
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
