@@ -22,12 +22,21 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
   const [newTag, setNewTag] = useState('');
   const [showNewTagInput, setShowNewTagInput] = useState(false);
 
+  const getDefaults = (section) => {
+    switch (section) {
+      case 'alumnos': return { estado: 'Activo' };
+      case 'cxc': return { estado: 'Pendiente' };
+      case 'finanzas': return { tipo: 'Ingreso', estado: 'Completado' };
+      default: return {};
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       if (mode === 'edit' && initialData) {
         setFormData({ ...initialData });
       } else {
-        setFormData({});
+        setFormData(getDefaults(section));
       }
       setFormErrors({});
       setNewTag('');
