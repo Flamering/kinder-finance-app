@@ -339,7 +339,9 @@ const App = () => {
                   {item.estado}
                 </span>
               </td>
-              <td className="p-4 text-sm font-semibold text-slate-700">${parseFloat(item.monto).toLocaleString()}</td>
+              <td className={`p-4 text-sm font-bold ${item.tipo === 'Ingreso' ? 'text-green-600' : 'text-red-600'}`}>
+                {item.tipo === 'Ingreso' ? '+' : '-'}${parseFloat(item.monto).toLocaleString()}
+              </td>
             </>
           );
         default:
@@ -597,6 +599,7 @@ const App = () => {
                     const ingresos = filteredData.filter(i => i.tipo === 'Ingreso').reduce((s, i) => s + parseFloat(i.monto), 0);
                     const gastos = filteredData.filter(i => i.tipo === 'Gasto').reduce((s, i) => s + parseFloat(i.monto), 0);
                     const pendientes = filteredData.filter(i => i.estado === 'Pendiente').length;
+                    const total = ingresos - gastos;
                     return (
                       <>
                         <div className="p-4 rounded-2xl bg-green-50 border border-green-200">
@@ -606,6 +609,10 @@ const App = () => {
                         <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
                           <div className="text-2xl font-black text-red-600">-${gastos.toLocaleString()}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Gastos</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
+                          <div className="text-2xl font-black text-[#74739E]">${total.toLocaleString()}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Total</div>
                         </div>
                         <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
                           <div className="text-2xl font-black text-yellow-700">{pendientes}</div>
