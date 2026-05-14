@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import SelectField from './SelectField';
 
 const sectionConfig = {
   alumnos: {
@@ -19,8 +20,6 @@ const sectionConfig = {
 const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTagsChange, onSave }) => {
   const [formData, setFormData] = useState({});
   const [formErrors, setFormErrors] = useState({});
-  const [newTag, setNewTag] = useState('');
-  const [showNewTagInput, setShowNewTagInput] = useState(false);
 
   const getDefaults = (section) => {
     switch (section) {
@@ -39,23 +38,16 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
         setFormData(getDefaults(section));
       }
       setFormErrors({});
-      setNewTag('');
-      setShowNewTagInput(false);
     }
   }, [isOpen, mode, initialData]);
 
-  const handleAddTag = () => {
-    if (!newTag.trim()) return;
-    const tagList = tags[section] || [];
-    if (!tagList.includes(newTag.trim())) {
-      onTagsChange({ ...tags, [section]: [...tagList, newTag.trim()] });
-    }
-    setNewTag('');
-    setShowNewTagInput(false);
-  };
+  const getTagOptions = (tagList) => (tagList || []).map(t => ({ value: t, label: t }));
 
-  const handleRemoveTag = (tagToRemove) => {
-    onTagsChange({ ...tags, [section]: tags[section].filter(t => t !== tagToRemove) });
+  const handleCreateTag = (field, tagList, newValue) => {
+    if (!tagList.includes(newValue)) {
+      onTagsChange({ ...tags, [section]: [...tagList, newValue] });
+    }
+    setFormData({ ...formData, [field]: newValue });
   };
 
   const handleSubmit = async () => {
@@ -74,41 +66,6 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
   const config = sectionConfig[section];
   const title = mode === 'edit' ? config.titleEdit : config.titleCreate;
   const submitLabel = mode === 'edit' ? 'GUARDAR' : 'CREAR';
-
-  const renderTagSelector = (field, tagList) => (
-    <div>
-      <div className="flex flex-wrap gap-2 mb-2">
-        {tagList.map(tag => (
-          <button
-            key={tag}
-            onClick={() => setFormData({ ...formData, [field]: tag })}
-            className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${formData[field] === tag ? 'bg-[#A7C7E7] text-white border-[#A7C7E7]' : 'bg-white text-slate-600 border-[#EAEAEA] hover:border-[#A7C7E7]'}`}
-          >
-            {tag}
-          </button>
-        ))}
-        <button
-          onClick={() => setShowNewTagInput(!showNewTagInput)}
-          className="px-3 py-1 rounded-full text-xs font-bold border border-dashed border-slate-400 text-slate-400 hover:border-[#A7C7E7] hover:text-[#A7C7E7]"
-        >
-          + Nueva
-        </button>
-      </div>
-      {showNewTagInput && (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-            placeholder="Nueva etiqueta..."
-            className="flex-1 p-2 bg-[#EAEAEA] border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-          />
-          <button onClick={handleAddTag} className="px-4 py-2 bg-[#A7C7E7] text-white rounded-lg">✓</button>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -140,10 +97,15 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                   required
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grado *</label>
-                {renderTagSelector('grado', tags.alumnos)}
-              </div>
+              <SelectField
+                label="Grado"
+                options={getTagOptions(tags.alumnos)}
+                value={formData.grado}
+                onChange={(val) => setFormData({ ...formData, grado: val })}
+                onCreateOption={(v) => handleCreateTag('grado', tags.alumnos, v)}
+                isCreatable
+                required
+              />
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tutor</label>
                 <input
@@ -171,18 +133,16 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                   className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
-                <select
-                  value={formData.estado || 'Activo'}
-                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                  <option value="Moroso">Moroso</option>
-                </select>
-              </div>
+              <SelectField
+                label="Estado"
+                options={[
+                  { value: 'Activo', label: 'Activo' },
+                  { value: 'Inactivo', label: 'Inactivo' },
+                  { value: 'Moroso', label: 'Moroso' },
+                ]}
+                value={formData.estado}
+                onChange={(val) => setFormData({ ...formData, estado: val })}
+              />
             </>
           )}
 
@@ -198,10 +158,15 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                   required
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Concepto *</label>
-                {renderTagSelector('concepto', tags.cxc)}
-              </div>
+              <SelectField
+                label="Concepto"
+                options={getTagOptions(tags.cxc)}
+                value={formData.concepto}
+                onChange={(val) => setFormData({ ...formData, concepto: val })}
+                onCreateOption={(v) => handleCreateTag('concepto', tags.cxc, v)}
+                isCreatable
+                required
+              />
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
                 <input
@@ -222,39 +187,41 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                   className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
-                <select
-                  value={formData.estado || 'Pendiente'}
-                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                >
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Pagado">Pagado</option>
-                  <option value="Parcial">Parcial</option>
-                  <option value="Vencido">Vencido</option>
-                </select>
-              </div>
+              <SelectField
+                label="Estado"
+                options={[
+                  { value: 'Pendiente', label: 'Pendiente' },
+                  { value: 'Pagado', label: 'Pagado' },
+                  { value: 'Parcial', label: 'Parcial' },
+                  { value: 'Vencido', label: 'Vencido' },
+                ]}
+                value={formData.estado}
+                onChange={(val) => setFormData({ ...formData, estado: val })}
+              />
             </>
           )}
 
           {section === 'finanzas' && (
             <>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tipo *</label>
-                <select
-                  value={formData.tipo || 'Ingreso'}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                >
-                  <option value="Ingreso">Ingreso</option>
-                  <option value="Gasto">Gasto</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Categoría *</label>
-                {renderTagSelector('categoria', tags.finanzas)}
-              </div>
+              <SelectField
+                label="Tipo"
+                options={[
+                  { value: 'Ingreso', label: 'Ingreso' },
+                  { value: 'Gasto', label: 'Gasto' },
+                ]}
+                value={formData.tipo}
+                onChange={(val) => setFormData({ ...formData, tipo: val })}
+                required
+              />
+              <SelectField
+                label="Categoría"
+                options={getTagOptions(tags.finanzas)}
+                value={formData.categoria}
+                onChange={(val) => setFormData({ ...formData, categoria: val })}
+                onCreateOption={(v) => handleCreateTag('categoria', tags.finanzas, v)}
+                isCreatable
+                required
+              />
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
                 <input
@@ -275,30 +242,26 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                   rows="3"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Método de Pago</label>
-                <select
-                  value={formData.metodo_pago || ''}
-                  onChange={(e) => setFormData({ ...formData, metodo_pago: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
-                <select
-                  value={formData.estado || 'Completado'}
-                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                >
-                  <option value="Completado">Completado</option>
-                  <option value="Pendiente">Pendiente</option>
-                </select>
-              </div>
+              <SelectField
+                label="Método de Pago"
+                options={[
+                  { value: 'Transferencia', label: 'Transferencia' },
+                  { value: 'Efectivo', label: 'Efectivo' },
+                  { value: 'Tarjeta', label: 'Tarjeta' },
+                ]}
+                value={formData.metodo_pago}
+                onChange={(val) => setFormData({ ...formData, metodo_pago: val })}
+                placeholder="Seleccionar..."
+              />
+              <SelectField
+                label="Estado"
+                options={[
+                  { value: 'Completado', label: 'Completado' },
+                  { value: 'Pendiente', label: 'Pendiente' },
+                ]}
+                value={formData.estado}
+                onChange={(val) => setFormData({ ...formData, estado: val })}
+              />
             </>
           )}
 
