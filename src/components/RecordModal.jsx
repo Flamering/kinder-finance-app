@@ -17,7 +17,7 @@ const sectionConfig = {
   },
 };
 
-const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTagsChange, onSave }) => {
+const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTagsChange, onSave, alumnoNames = [] }) => {
   const [formData, setFormData] = useState({});
   const [formErrors, setFormErrors] = useState({});
 
@@ -148,16 +148,14 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
 
           {section === 'cxc' && (
             <>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno *</label>
-                <input
-                  type="text"
-                  value={formData.alumno_nombre || ''}
-                  onChange={(e) => setFormData({ ...formData, alumno_nombre: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
-                  required
-                />
-              </div>
+              <SelectField
+                label="Nombre del Alumno"
+                options={alumnoNames.map(n => ({ value: n, label: n }))}
+                value={formData.alumno_nombre}
+                onChange={(val) => setFormData({ ...formData, alumno_nombre: val })}
+                isCreatable
+                required
+              />
               <SelectField
                 label="Concepto"
                 options={getTagOptions(tags.cxc)}

@@ -1005,6 +1005,7 @@ const App = () => {
         tags={tags}
         onTagsChange={(newTags) => setTags(newTags)}
         onSave={handleCreate}
+        alumnoNames={[...new Set(data.alumnos.map(a => a.nombre))]}
       />
       <RecordModal
         isOpen={isEditModalOpen && currentSection !== 'home' && editingItem !== null}
@@ -1015,6 +1016,7 @@ const App = () => {
         tags={tags}
         onTagsChange={(newTags) => setTags(newTags)}
         onSave={handleUpdate}
+        alumnoNames={[...new Set(data.alumnos.map(a => a.nombre))]}
       />
 
       <style>{`
