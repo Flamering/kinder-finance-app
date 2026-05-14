@@ -113,26 +113,39 @@ const App = () => {
     setVisibleCount(8);
   }, [searchTerm]);
 
-  // Cargar datos al cambiar de sección
+  // Cargar todas las secciones al iniciar
   useEffect(() => {
-    if (currentSection === 'home' || !currentSection) return;
-    
-    const fetchData = async () => {
+    const loadAll = async () => {
       setLoading(true);
       setError(null);
-      
       try {
-        const result = await fetchSectionData(currentSection);
-        setData(prev => ({ ...prev, [currentSection]: result }));
+        const [alumnos, cxc, finanzas] = await Promise.all([
+          fetchSectionData('alumnos'),
+          fetchSectionData('cxc'),
+          fetchSectionData('finanzas'),
+        ]);
+        setData({ alumnos, cxc, finanzas });
       } catch (err) {
-        console.error(`Error fetching ${currentSection}:`, err);
-        setError(`Error al cargar ${currentSection}: ${err.message}`);
+        console.error('Error loading data:', err);
+        setError(`Error al cargar datos: ${err.message}`);
       } finally {
         setLoading(false);
       }
     };
+    loadAll();
+  }, []);
 
-    fetchData();
+  // Refrescar datos al cambiar de sección
+  useEffect(() => {
+    if (currentSection === 'home' || !currentSection) return;
+    (async () => {
+      try {
+        const result = await fetchSectionData(currentSection);
+        setData(prev => ({ ...prev, [currentSection]: result }));
+      } catch (err) {
+        console.error(`Error refreshing ${currentSection}:`, err);
+      }
+    })();
   }, [currentSection]);
 
   const sectionData = data[currentSection] || [];
