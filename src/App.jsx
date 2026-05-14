@@ -19,6 +19,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
+import HomeDashboard from './components/HomeDashboard';
 import { fetchSectionData, createRecord, updateRecord, softDeleteRecord } from './lib/api';
 
 // --- Constantes de Diseño ---
@@ -823,17 +824,11 @@ const App = () => {
               </div>
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center">
+            <div className="h-full overflow-y-auto">
               {currentSection === 'home' ? (
-                <>
-                  <div className="w-24 h-24 bg-[#EAEAEA] rounded-[2rem] flex items-center justify-center mb-6 text-[#74739E]">
-                    <Home size={48} />
-                  </div>
-                  <h2 className="text-2xl font-bold text-[#74739E]">Dashboard Principal</h2>
-                  <p className="text-slate-400 max-w-md mx-auto mt-2">
-                    Bienvenido al sistema de gestión del kinder. Selecciona una sección en la barra inferior para comenzar.
-                  </p>
-                </>
+                <div className="max-w-4xl mx-auto p-6 md:p-10">
+                  <HomeDashboard cxcData={data.cxc} />
+                </div>
               ) : (
                 <>
                   <div className="w-24 h-24 bg-[#EAEAEA] rounded-[2rem] flex items-center justify-center mb-6 text-[#74739E]">
