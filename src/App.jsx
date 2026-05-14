@@ -460,10 +460,32 @@ const App = () => {
         {/* Contenido de la Lista */}
         <div ref={listContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {currentSection === 'home' ? (
-            <div className="text-center text-slate-400 py-10">
-              <Home size={48} className="mx-auto mb-4 opacity-30" />
-              <p className="text-sm">Bienvenido al sistema de gestión</p>
-              <p className="text-xs mt-2">Selecciona una sección para comenzar</p>
+            <div className="space-y-3">
+              {[
+                { id: 'alumnos', icon: Users, label: 'Alumnos', desc: `${data.alumnos.filter(a => a.estado === 'Activo').length} activos` },
+                { id: 'cxc', icon: DollarSign, label: 'Cuentas por Cobrar', desc: `${data.cxc.filter(c => c.estado === 'Pendiente' || c.estado === 'Vencido').length} pendientes` },
+                { id: 'finanzas', icon: TrendingUp, label: 'Finanzas', desc: `${data.finanzas.filter(f => f.estado === 'Pendiente').length} pendientes` },
+              ].map((section) => {
+                const Icon = section.icon;
+                return (
+                  <div
+                    key={section.id}
+                    onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setSearchTerm(''); }}
+                    className="p-5 rounded-2xl cursor-pointer transition-all border bg-white border-[#EAEAEA] hover:border-[#A7C7E7] hover:shadow-md active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-[#F7F9FB] rounded-xl flex items-center justify-center text-[#74739E]">
+                        <Icon size={24} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-700 text-sm">{section.label}</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{section.desc}</p>
+                      </div>
+                      <ChevronRight size={16} className="text-slate-300 shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : filteredData.length === 0 ? (
             <div className="text-center text-slate-400 py-10">
