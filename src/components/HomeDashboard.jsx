@@ -4,7 +4,7 @@ import MonthlySummary from './MonthlySummary';
 import MiniCards from './MiniCards';
 
 const HomeDashboard = ({ cxcData = [] }) => {
-  const { chartData, mesActual, mesAnterior, stats } = useMemo(() => {
+  const { chartData, mesActual, vsAnterior, stats } = useMemo(() => {
     const now = new Date();
     const anio = now.getFullYear();
     const mes = now.getMonth();
