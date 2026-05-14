@@ -17,7 +17,7 @@ const sectionConfig = {
   },
 };
 
-const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTagsChange, onSave, alumnoNames = [] }) => {
+const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTagsChange, onSave, alumnoNames = [], gradoOptions = [], conceptoOptions = [], categoriaOptions = [] }) => {
   const [formData, setFormData] = useState({});
   const [formErrors, setFormErrors] = useState({});
 
@@ -99,7 +99,7 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
               </div>
               <SelectField
                 label="Grado"
-                options={getTagOptions(tags.alumnos)}
+                options={getTagOptions(gradoOptions)}
                 value={formData.grado}
                 onChange={(val) => setFormData({ ...formData, grado: val })}
                 onCreateOption={(v) => handleCreateTag('grado', tags.alumnos, v)}
@@ -158,7 +158,7 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
               />
               <SelectField
                 label="Concepto"
-                options={getTagOptions(tags.cxc)}
+                options={getTagOptions(conceptoOptions)}
                 value={formData.concepto}
                 onChange={(val) => setFormData({ ...formData, concepto: val })}
                 onCreateOption={(v) => handleCreateTag('concepto', tags.cxc, v)}
@@ -213,7 +213,7 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
               />
               <SelectField
                 label="Categoría"
-                options={getTagOptions(tags.finanzas)}
+                options={getTagOptions(categoriaOptions)}
                 value={formData.categoria}
                 onChange={(val) => setFormData({ ...formData, categoria: val })}
                 onCreateOption={(v) => handleCreateTag('categoria', tags.finanzas, v)}

@@ -1004,27 +1004,34 @@ const App = () => {
         </div>
       )}
 
-      <RecordModal
-        isOpen={isModalOpen && currentSection !== 'home'}
-        onClose={() => setIsModalOpen(false)}
-        section={currentSection}
-        mode="create"
-        tags={tags}
-        onTagsChange={(newTags) => setTags(newTags)}
-        onSave={handleCreate}
-        alumnoNames={[...new Set(data.alumnos.map(a => a.nombre))]}
-      />
-      <RecordModal
-        isOpen={isEditModalOpen && currentSection !== 'home' && editingItem !== null}
-        onClose={() => { setIsEditModalOpen(false); setEditingItem(null); }}
-        section={currentSection}
-        mode="edit"
-        initialData={editingItem}
-        tags={tags}
-        onTagsChange={(newTags) => setTags(newTags)}
-        onSave={handleUpdate}
-        alumnoNames={[...new Set(data.alumnos.map(a => a.nombre))]}
-      />
+      {(() => {
+        const gradoOptions = [...new Set([...tags.alumnos, ...data.alumnos.map(a => a.grado).filter(Boolean)])];
+        const conceptoOptions = [...new Set([...tags.cxc, ...data.cxc.map(c => c.concepto).filter(Boolean)])];
+        const categoriaOptions = [...new Set([...tags.finanzas, ...data.finanzas.map(f => f.categoria).filter(Boolean)])];
+        const alumnoNames = [...new Set(data.alumnos.map(a => a.nombre))];
+        const sharedProps = { tags, onTagsChange: (newTags) => setTags(newTags), gradoOptions, conceptoOptions, categoriaOptions, alumnoNames };
+        return (
+          <>
+            <RecordModal
+              isOpen={isModalOpen && currentSection !== 'home'}
+              onClose={() => setIsModalOpen(false)}
+              section={currentSection}
+              mode="create"
+              onSave={handleCreate}
+              {...sharedProps}
+            />
+            <RecordModal
+              isOpen={isEditModalOpen && currentSection !== 'home' && editingItem !== null}
+              onClose={() => { setIsEditModalOpen(false); setEditingItem(null); }}
+              section={currentSection}
+              mode="edit"
+              initialData={editingItem}
+              onSave={handleUpdate}
+              {...sharedProps}
+            />
+          </>
+        );
+      })()}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
