@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import MonthlyChart from './MonthlyChart';
 import MonthlySummary from './MonthlySummary';
 import MiniCards from './MiniCards';
+import PeriodComparison from './PeriodComparison';
 
 const HomeDashboard = ({ cxcData = [] }) => {
   const { chartData, mesActual, vsAnterior, stats } = useMemo(() => {
@@ -62,6 +63,10 @@ const HomeDashboard = ({ cxcData = [] }) => {
       </div>
 
       <MiniCards {...stats} />
+
+      <div className="mt-10">
+        <PeriodComparison cxcData={cxcData} />
+      </div>
     </div>
   );
 };
