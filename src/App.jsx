@@ -364,11 +364,11 @@ const App = () => {
     };
 
     return (
-      <div className="w-full overflow-hidden bg-white rounded-2xl border border-[#EAEAEA] shadow-sm animate-in fade-in duration-500">
+      <div className="w-full overflow-hidden bg-white rounded-2xl border border-[#E5E7EB] shadow-sm animate-in fade-in duration-500">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#EAEAEA] border-b border-[#EAEAEA]">
+              <tr className="bg-[#F4F5F8] border-b border-[#E5E7EB]">
                 <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest">
                   {section === 'alumnos' ? 'Alumno' : section === 'cxc' ? 'Concepto' : 'Categoría'}
                 </th>
@@ -379,12 +379,12 @@ const App = () => {
                 <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#EAEAEA]">
+            <tbody className="divide-y divide-[#E5E7EB]">
               {data.map((item) => (
-                <tr key={item.id} className="hover:bg-[#F7F9FB] transition-colors group">
+                <tr key={item.id} className="hover:bg-[#F8F9FB] transition-colors group">
                   {renderTableCell(item, section)}
                   <td className="p-4 text-right">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onSelect(item)}
                         className="p-2 text-[#A7C7E7] hover:bg-[#A7C7E7]/10 rounded-lg transition-colors"
@@ -422,11 +422,11 @@ const App = () => {
 
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-full md:static md:z-auto md:w-80 md:flex-shrink-0 bg-white border-r border-[#EAEAEA] flex flex-col transition-transform duration-300
+        fixed inset-y-0 left-0 z-40 w-full md:static md:z-auto md:w-80 md:flex-shrink-0 bg-white border-r border-[#E5E7EB] flex flex-col transition-transform duration-300
         ${selectedItem ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
       `}>
-        {/* Header Fijo (Área Seleccionada en Screenshot) */}
-        <div className="p-4 space-y-3 bg-white border-b border-[#EAEAEA]">
+        {/* Header Fijo */}
+        <div className="p-4 space-y-3 bg-white border-b border-[#E5E7EB]">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-[#74739E]">
               {currentSection === 'home' ? 'Inicio' : 
@@ -472,7 +472,7 @@ const App = () => {
         </div>
 
         {/* Contenido de la Lista */}
-        <div ref={listContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        <div ref={listContainerRef} className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
           {currentSection === 'home' ? (
             <div className="space-y-3">
               {[
@@ -485,17 +485,17 @@ const App = () => {
                   <div
                     key={section.id}
                     onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setSearchTerm(''); }}
-                    className="p-5 rounded-2xl cursor-pointer transition-all border bg-white border-[#EAEAEA] hover:border-[#A7C7E7] hover:shadow-md active:scale-[0.98]"
+                    className="p-4 rounded-xl cursor-pointer transition-all hover:bg-[#F4F5F8] active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-[#F7F9FB] rounded-xl flex items-center justify-center text-[#74739E]">
-                        <Icon size={24} />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#F4F5F8] rounded-lg flex items-center justify-center text-[#74739E] shrink-0">
+                        <Icon size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-slate-700 text-sm">{section.label}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{section.desc}</p>
+                        <h4 className="font-semibold text-slate-700 text-sm">{section.label}</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">{section.desc}</p>
                       </div>
-                      <ChevronRight size={16} className="text-slate-300 shrink-0" />
+                      <ChevronRight size={14} className="text-slate-300 shrink-0" />
                     </div>
                   </div>
                 );
@@ -512,28 +512,32 @@ const App = () => {
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
                   className={`
-                    p-4 rounded-2xl cursor-pointer transition-all border
+                    p-3.5 rounded-xl cursor-pointer transition-all
                     ${selectedItem?.id === item.id
-                      ? 'bg-[#F7F9FB] border-[#74739E] shadow-inner'
-                      : 'bg-white border-[#EAEAEA] hover:border-[#A7C7E7] hover:shadow-sm'}
+                      ? 'bg-[#A7C7E7]/10 text-[#5A7A9A]'
+                      : 'hover:bg-[#F4F5F8] text-slate-700'}
                   `}
                 >
-                  <div className="flex justify-between items-start mb-1">
-                    <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase border ${getStatusStyles(item.estado, currentSection)}`}>
-                      {item.estado}
-                    </span>
-                    <ChevronRight size={14} className="text-slate-300" />
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border ${getStatusStyles(item.estado, currentSection)}`}>
+                          {item.estado}
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-sm truncate">
+                        {currentSection === 'alumnos' ? item.nombre :
+                         currentSection === 'cxc' ? `${item.alumno_nombre} - ${item.concepto}` :
+                         `${item.tipo}: ${item.categoria}`}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}` :
+                         currentSection === 'cxc' ? `$${item.monto} • Vence: ${item.fecha_vencimiento}` :
+                         `$${parseFloat(item.monto).toLocaleString()} • ${item.fecha}`}
+                      </p>
+                    </div>
+                    <ChevronRight size={14} className="text-slate-300 mt-1.5 shrink-0" />
                   </div>
-                  <h4 className="font-semibold text-slate-700 text-sm">
-                    {currentSection === 'alumnos' ? item.nombre :
-                     currentSection === 'cxc' ? `${item.alumno_nombre} - ${item.concepto}` :
-                     `${item.tipo}: ${item.categoria}`}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-1">
-                    {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}` :
-                     currentSection === 'cxc' ? `$${item.monto} • Vence: ${item.fecha_vencimiento}` :
-                     `$${parseFloat(item.monto).toLocaleString()} • ${item.fecha}`}
-                  </p>
                 </div>
               ))}
               {/* Indicador de carga más items */}
@@ -574,14 +578,14 @@ const App = () => {
             </div>
           ) : currentSection !== 'home' && selectedItem === '__table__' ? (
             <div className="animate-in slide-in-from-right-10 duration-500 w-full">
-              <div className="flex items-center gap-4 mb-8">
+              <div className="flex items-center gap-3 mb-8">
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="p-2 bg-white shadow-sm border border-[#EAEAEA] rounded-full hover:bg-[#EAEAEA] transition-colors"
+                  className="p-2 bg-white shadow-sm border border-[#E5E7EB] rounded-full hover:bg-[#F4F5F8] transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
-                <h2 className="text-2xl font-bold text-[#74739E]">
+                <h2 className="text-xl font-bold text-[#74739E]">
                   {currentSection === 'alumnos' ? 'Gestión de Alumnos' :
                    currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Gestión Financiera'}
                 </h2>
@@ -695,14 +699,14 @@ const App = () => {
               </div>
           ) : selectedItem ? (
             <div className="animate-in slide-in-from-right-10 duration-500 w-full">
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-3 mb-6">
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="p-2 bg-white shadow-sm border border-[#EAEAEA] rounded-full hover:bg-[#EAEAEA] transition-colors"
+                  className="p-2 bg-white shadow-sm border border-[#E5E7EB] rounded-full hover:bg-[#F4F5F8] transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
-                <h2 className="text-2xl font-bold text-[#74739E]">
+                <h2 className="text-xl font-bold text-[#74739E]">
                   {currentSection === 'alumnos' ? 'Detalle del Alumno' :
                    currentSection === 'cxc' ? 'Detalle de Cuenta' : 'Detalle Financiero'}
                 </h2>
@@ -711,45 +715,45 @@ const App = () => {
                   className="ml-auto p-2 bg-[#A7C7E7] text-white rounded-xl hover:brightness-105 transition-all"
                   title="Editar"
                 >
-                  <Pencil size={18} />
+                  <Pencil size={16} />
                 </button>
               </div>
 
               {/* Header card */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA] mb-6">
+              <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] mb-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div>
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+                    <h1 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">
                       {currentSection === 'alumnos' ? selectedItem.nombre :
                        currentSection === 'cxc' ? selectedItem.concepto :
                        selectedItem.categoria}
                     </h1>
                     <p className="text-slate-400 mt-1 text-sm">
-                      Registro Ref: ID-{selectedItem.id.toString().padStart(4, '0')}
+                      Ref: ID-{selectedItem.id.toString().padStart(4, '0')}
                     </p>
                   </div>
-                  <span className={`px-5 py-2 rounded-full text-xs font-black uppercase border tracking-widest ${getStatusStyles(selectedItem.estado, currentSection)}`}>
+                  <span className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase border tracking-wider ${getStatusStyles(selectedItem.estado, currentSection)}`}>
                     {selectedItem.estado}
                   </span>
                 </div>
               </div>
 
               {/* Detail cards - full width grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {currentSection === 'alumnos' ? (
                   <>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Información Académica</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
+                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Información Académica</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Grado</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.grado}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Tutor</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.tutor}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Email</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.email}</span>
                         </div>
@@ -759,30 +763,30 @@ const App = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Fecha de Inscripción</h5>
-                      <p className="text-2xl font-bold text-slate-700 mb-3">{selectedItem.fecha_inscripcion}</p>
+                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
+                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Fecha de Inscripción</h5>
+                      <p className="text-lg font-bold text-slate-700 mb-2">{selectedItem.fecha_inscripcion}</p>
                       <p className="text-sm text-slate-400">Estado actual: {selectedItem.status}</p>
                     </div>
                   </>
                 ) : currentSection === 'cxc' ? (
                   <>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Información de Pago</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
+                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Información de Pago</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Alumno</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.alumno_nombre}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Concepto</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.concepto}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Monto Total</span>
                           <span className="text-sm font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Monto Pagado</span>
                           <span className="text-sm font-semibold text-green-600">${parseFloat(selectedItem.monto_pagado).toLocaleString()}</span>
                         </div>
@@ -792,10 +796,10 @@ const App = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Fechas</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
+                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Fechas</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Emisión</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.fecha_emision}</span>
                         </div>
@@ -809,22 +813,22 @@ const App = () => {
                   </>
                 ) : (
                   <>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Información Financiera</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
+                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Información Financiera</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Tipo</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.tipo}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Categoría</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.categoria}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Monto</span>
-                          <span className="text-lg font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
+                          <span className="text-sm font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#EAEAEA]">
+                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
                           <span className="text-sm text-slate-400">Método de Pago</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.metodo_pago || 'N/A'}</span>
                         </div>
@@ -834,9 +838,9 @@ const App = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-                      <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">Fecha de Registro</h5>
-                      <p className="text-2xl font-bold text-slate-700 mb-3">{selectedItem.fecha}</p>
+                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
+                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Fecha de Registro</h5>
+                      <p className="text-lg font-bold text-slate-700 mb-2">{selectedItem.fecha}</p>
                       <p className="text-sm text-slate-400">Estado: {selectedItem.estado}</p>
                     </div>
                   </>
@@ -872,7 +876,7 @@ const App = () => {
       </main>
 
       {/* BOTTOM NAVBAR */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#F7F9FB] border-t border-[#EAEAEA] z-50 flex items-center justify-around shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-[#E5E7EB] z-50 flex items-center justify-around shadow-[0_-2px_8px_rgba(0,0,0,0.03)]">
         {[
           { id: 'home', icon: Home, label: 'Inicio' },
           { id: 'alumnos', icon: Users, label: 'Alumnos' },
@@ -892,12 +896,12 @@ const App = () => {
               }}
               className="relative flex flex-col items-center justify-center w-16 h-full transition-all"
             >
-              {isActive && <div className="absolute top-0 w-8 h-1 bg-[#A7C7E7] rounded-b-full shadow-[0_2px_5px_#A7C7E7]" />}
+              {isActive && <div className="absolute top-0 w-8 h-0.5 bg-[#A7C7E7] rounded-b-full shadow-[0_2px_6px_#A7C7E7]" />}
               <Icon
-                size={22}
-                className={`transition-colors ${isActive ? 'text-[#74739E]' : 'text-slate-300'}`}
+                size={20}
+                className={`transition-colors ${isActive ? 'text-[#5A7A9A]' : 'text-slate-300'}`}
               />
-              <span className={`text-[9px] font-bold mt-1 transition-colors ${isActive ? 'text-[#74739E]' : 'text-slate-300'}`}>
+              <span className={`text-[9px] font-semibold mt-0.5 transition-colors ${isActive ? 'text-[#5A7A9A]' : 'text-slate-300'}`}>
                 {tab.label}
               </span>
             </button>
