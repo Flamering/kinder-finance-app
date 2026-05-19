@@ -24,10 +24,10 @@ import { fetchSectionData, createRecord, updateRecord, softDeleteRecord } from '
 
 // --- Constantes de Diseño ---
 const COLORS = {
-  primary: '#A7C7E7',
-  secondary: '#EAEAEA',
-  tertiary: '#74739E',
-  neutral: '#F7F9FB'
+  primary: '#5A7A9A',
+  secondary: '#E2E8F0',
+  tertiary: '#475569',
+  neutral: '#F0F2F5'
 };
 
 const App = () => {
@@ -281,7 +281,7 @@ const App = () => {
   const getStatusStyles = (status, section) => {
     if (section === 'alumnos') {
       switch (status) {
-        case 'Activo': return 'bg-[#A7C7E7]/20 text-[#4A5568] border-[#A7C7E7]/40';
+        case 'Activo': return 'bg-[#A7C7E7]/20 text-slate-700 border-[#A7C7E7]/40';
         case 'Inactivo': return 'bg-slate-100 text-slate-600 border-slate-200';
         case 'Moroso': return 'bg-[#FCA5A5]/40 text-red-800 border-red-200';
         default: return 'bg-slate-100 text-slate-600 border-slate-200';
@@ -289,7 +289,7 @@ const App = () => {
     }
     if (section === 'cxc') {
       switch (status) {
-        case 'Pagado': return 'bg-[#A7C7E7]/20 text-[#4A5568] border-[#A7C7E7]/40';
+        case 'Pagado': return 'bg-[#A7C7E7]/20 text-slate-700 border-[#A7C7E7]/40';
         case 'Pendiente': return 'bg-[#FDE68A]/40 text-yellow-800 border-yellow-200';
         case 'Vencido': return 'bg-[#FCA5A5]/40 text-red-800 border-red-200';
         case 'Parcial': return 'bg-[#FDE68A]/40 text-yellow-800 border-yellow-200';
@@ -298,7 +298,7 @@ const App = () => {
     }
     if (section === 'finanzas') {
       switch (status) {
-        case 'Completado': return 'bg-[#A7C7E7]/20 text-[#4A5568] border-[#A7C7E7]/40';
+        case 'Completado': return 'bg-[#A7C7E7]/20 text-slate-700 border-[#A7C7E7]/40';
         case 'Pendiente': return 'bg-[#FDE68A]/40 text-yellow-800 border-yellow-200';
         default: return 'bg-slate-100 text-slate-600 border-slate-200';
       }
@@ -316,7 +316,7 @@ const App = () => {
             <>
               <td className="p-4">
                 <div className="font-semibold text-slate-700 text-sm">{item.nombre}</div>
-                <div className="text-[10px] text-slate-400">{item.grado} • {item.tutor}</div>
+                <div className="text-[10px] text-slate-500">{item.grado} • {item.tutor}</div>
               </td>
               <td className="p-4 text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-bold border ${getStatusStyles(item.estado, section)}`}>
@@ -331,7 +331,7 @@ const App = () => {
             <>
               <td className="p-4">
                 <div className="font-semibold text-slate-700 text-sm">{item.alumno_nombre}</div>
-                <div className="text-[10px] text-slate-400">{item.concepto}</div>
+                <div className="text-[10px] text-slate-500">{item.concepto}</div>
               </td>
               <td className="p-4 text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-bold border ${getStatusStyles(item.estado, section)}`}>
@@ -346,7 +346,7 @@ const App = () => {
             <>
               <td className="p-4">
                 <div className="font-semibold text-slate-700 text-sm">{item.categoria}</div>
-                <div className="text-[10px] text-slate-400">{item.tipo} • {item.descripcion || 'Sin descripción'}</div>
+                <div className="text-[10px] text-slate-500">{item.tipo} • {item.descripcion || 'Sin descripción'}</div>
               </td>
               <td className="p-4 text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-bold border ${getStatusStyles(item.estado, section)}`}>
@@ -364,19 +364,19 @@ const App = () => {
     };
 
     return (
-      <div className="w-full overflow-hidden bg-white rounded-2xl border border-[#E5E7EB] shadow-sm animate-in fade-in duration-500">
+      <div className="w-full overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-card transition-shadow">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#F4F5F8] border-b border-[#E5E7EB]">
-                <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest">
+              <tr className="bg-slate-100 border-b border-slate-200">
+                <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
                   {section === 'alumnos' ? 'Alumno' : section === 'cxc' ? 'Concepto' : 'Categoría'}
                 </th>
-                <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest text-center">Estado</th>
-                <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest">
+                <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest text-center">Estado</th>
+                <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
                   {section === 'alumnos' ? 'Inscripción' : section === 'cxc' ? 'Monto' : 'Monto'}
                 </th>
-                <th className="p-4 text-[10px] font-bold text-[#74739E] uppercase tracking-widest text-right">Acciones</th>
+                <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
@@ -387,14 +387,14 @@ const App = () => {
                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onSelect(item)}
-                        className="p-2 text-[#A7C7E7] hover:bg-[#A7C7E7]/10 rounded-lg transition-colors"
+                        className="p-2 text-brand-200 hover:bg-brand-100/30 rounded-lg transition-colors"
                         title="Ver Detalle"
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         onClick={() => handleEdit(item)}
-                        className="p-2 text-[#74739E] hover:bg-[#74739E]/10 rounded-lg transition-colors"
+                        className="p-2 text-slate-600 hover:bg-[#74739E]/10 rounded-lg transition-colors"
                         title="Editar"
                       >
                         <Pencil size={16} />
@@ -418,35 +418,35 @@ const App = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#F7F9FB] text-slate-800 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-slate-50 text-slate-800 overflow-hidden font-sans">
 
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-full md:static md:z-auto md:w-80 md:flex-shrink-0 bg-white border-r border-[#E5E7EB] flex flex-col transition-transform duration-300
+        fixed inset-y-0 left-0 z-40 w-full md:static md:z-auto md:w-80 md:flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300
         ${selectedItem ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
       `}>
         {/* Header Fijo */}
-        <div className="p-4 space-y-3 bg-white border-b border-[#E5E7EB]">
+        <div className="p-4 space-y-3 bg-white border-b border-slate-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#74739E]">
+            <h2 className="text-xl font-bold text-slate-600">
               {currentSection === 'home' ? 'Inicio' : 
                currentSection === 'alumnos' ? 'Alumnos' : 
                currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
             </h2>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="p-2 bg-[#A7C7E7] text-white rounded-lg shadow-md hover:brightness-105 active:scale-95 transition-all"
+              className="flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
             >
-              <Plus size={20} />
+              <Plus size={18} />
             </button>
           </div>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
               <input
                 type="text"
                 placeholder="Buscar..."
-                className="w-full pl-10 pr-4 py-2 bg-[#EAEAEA] rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#A7C7E7] transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-200 transition-all"
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
@@ -454,7 +454,7 @@ const App = () => {
             {/* Botón de Cambio de Vista */}
             <button
               onClick={() => setSelectedItem(selectedItem === '__table__' ? null : '__table__')}
-              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${selectedItem === '__table__' ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200'}`}
+              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${selectedItem === '__table__' ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200'}`}
               title={selectedItem === '__table__' ? "Volver a Lista" : "Mostrar Tabla"}
             >
               {selectedItem === '__table__' ? <LayoutList size={18} /> : <TableIcon size={18} />}
@@ -462,7 +462,7 @@ const App = () => {
 
             <button 
               onClick={() => setIsFilterOpen(true)}
-              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${Object.keys(filters).length > 0 ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-[#EAEAEA] text-[#74739E] border-transparent hover:bg-slate-200'}`}
+              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${Object.keys(filters).length > 0 ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200'}`}
               title="Filtrar"
             >
               <Filter size={18} />
@@ -485,15 +485,15 @@ const App = () => {
                   <div
                     key={section.id}
                     onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setSearchTerm(''); }}
-                    className="p-4 rounded-xl cursor-pointer transition-all hover:bg-[#F4F5F8] active:scale-[0.98]"
+                    className="p-4 rounded-xl cursor-pointer transition-all hover:bg-slate-100 active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#F4F5F8] rounded-lg flex items-center justify-center text-[#74739E] shrink-0">
+                      <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600 shrink-0">
                         <Icon size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-slate-700 text-sm">{section.label}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">{section.desc}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">{section.desc}</p>
                       </div>
                       <ChevronRight size={14} className="text-slate-300 shrink-0" />
                     </div>
@@ -502,7 +502,7 @@ const App = () => {
               })}
             </div>
           ) : filteredData.length === 0 ? (
-            <div className="text-center text-slate-400 py-10">
+            <div className="text-center text-slate-500 py-10">
               <p className="text-sm">No hay registros para mostrar</p>
             </div>
           ) : (
@@ -514,8 +514,8 @@ const App = () => {
                   className={`
                     p-3.5 rounded-xl cursor-pointer transition-all
                     ${selectedItem?.id === item.id
-                      ? 'bg-[#A7C7E7]/10 text-[#5A7A9A]'
-                      : 'hover:bg-[#F4F5F8] text-slate-700'}
+                      ? 'bg-brand-50 text-brand-300 border-l-2 border-brand-200'
+                      : 'hover:bg-slate-100 text-slate-700 border-l-2 border-transparent'}
                   `}
                 >
                   <div className="flex items-start gap-2.5">
@@ -530,7 +530,7 @@ const App = () => {
                          currentSection === 'cxc' ? `${item.alumno_nombre} - ${item.concepto}` :
                          `${item.tipo}: ${item.categoria}`}
                       </h4>
-                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
                         {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}` :
                          currentSection === 'cxc' ? `$${item.monto} • Vence: ${item.fecha_vencimiento}` :
                          `$${parseFloat(item.monto).toLocaleString()} • ${item.fecha}`}
@@ -543,7 +543,7 @@ const App = () => {
               {/* Indicador de carga más items */}
               {visibleCount < filteredData.length && (
                 <div className="text-center py-3">
-                  <div className="w-5 h-5 border-2 border-[#A7C7E7] border-t-transparent rounded-full animate-spin mx-auto" />
+                  <div className="w-5 h-5 border-2 border-brand-200 border-t-transparent rounded-full animate-spin mx-auto" />
                 </div>
               )}
             </>
@@ -556,22 +556,22 @@ const App = () => {
         fixed inset-0 z-30 md:static md:z-auto md:flex-1 md:min-h-0 transition-transform duration-300 mb-16 md:mb-0
         ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0')}
       `}>
-        <div className="h-full overflow-y-auto bg-[#F7F9FB]">
-          <div className="w-full md:max-w-5xl md:mx-auto p-6 md:p-10">
+        <div className="h-full overflow-y-auto bg-slate-50">
+          <div className="w-full p-6 md:p-10">
           {/* Lógica de Visualización basada en viewMode y selectedItem */}
           {loading ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <Loader2 size={48} className="text-[#74739E] animate-spin mb-4" />
-              <p className="text-slate-400">Cargando datos...</p>
+              <Loader2 size={48} className="text-slate-600 animate-spin mb-4" />
+              <p className="text-slate-500">Cargando datos...</p>
             </div>
           ) : error ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <AlertCircle size={48} className="text-red-400 mb-4" />
               <h2 className="text-xl font-bold text-red-600 mb-2">Error de Conexión</h2>
-              <p className="text-slate-400 max-w-md mx-auto">{error}</p>
+              <p className="text-slate-500 max-w-md mx-auto">{error}</p>
               <button 
                 onClick={() => window.location.reload()} 
-                className="mt-4 px-6 py-3 bg-[#A7C7E7] text-white rounded-xl hover:brightness-105"
+                className="mt-4 px-6 py-3 bg-[#5A7A9A] text-white rounded-xl hover:brightness-110"
               >
                 Reintentar
               </button>
@@ -581,11 +581,11 @@ const App = () => {
               <div className="flex items-center gap-3 mb-8">
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="p-2 bg-white shadow-sm border border-[#E5E7EB] rounded-full hover:bg-[#F4F5F8] transition-colors"
+                  className="p-2 bg-white shadow-sm border border-slate-200 rounded-full hover:bg-slate-100 transition-colors"
                 >
                   <X size={18} />
                 </button>
-                <h2 className="text-xl font-bold text-[#74739E]">
+                <h2 className="text-xl font-bold text-slate-600">
                   {currentSection === 'alumnos' ? 'Gestión de Alumnos' :
                    currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Gestión Financiera'}
                 </h2>
@@ -599,8 +599,8 @@ const App = () => {
                     const inactivos = filteredData.filter(i => i.estado === 'Inactivo').length;
                     return (
                       <>
-                        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
-                          <div className="text-2xl font-black text-[#74739E]">{activos}</div>
+                        <div className="p-4 rounded-2xl bg-brand-50 border border-brand-150/30">
+                          <div className="text-2xl font-black text-slate-600">{activos}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Activos</div>
                         </div>
                         <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
@@ -628,8 +628,8 @@ const App = () => {
                           <div className="text-2xl font-black text-red-600">{vencidos}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Vencidos</div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
-                          <div className="text-2xl font-black text-[#74739E]">${totalCobrar.toLocaleString()}</div>
+                        <div className="p-4 rounded-2xl bg-brand-50 border border-brand-150/30">
+                          <div className="text-2xl font-black text-slate-600">${totalCobrar.toLocaleString()}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Total por Cobrar</div>
                         </div>
                       </>
@@ -653,8 +653,8 @@ const App = () => {
                           <div className="text-2xl font-black text-red-600">-${gastos.toLocaleString()}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Gastos</div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
-                          <div className="text-2xl font-black text-[#74739E]">${total.toLocaleString()}</div>
+                        <div className="p-4 rounded-2xl bg-brand-50 border border-brand-150/30">
+                          <div className="text-2xl font-black text-slate-600">${total.toLocaleString()}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Total</div>
                         </div>
                         <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
@@ -670,20 +670,20 @@ const App = () => {
                   })()}
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-card transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h1 className="text-3xl font-black text-slate-800 tracking-tight">
                         {currentSection === 'alumnos' ? 'Alumnos' :
                          currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
                       </h1>
-                      <p className="text-slate-400 mt-1 text-sm">
+                      <p className="text-slate-500 mt-1 text-sm">
                         {currentSection === 'alumnos' ? 'Control de alumnos y su información académica.' :
                          currentSection === 'cxc' ? 'Seguimiento de pagos y cuentas pendientes.' :
                          'Registro de ingresos y gastos del kinder.'}
                       </p>
                     </div>
-                    <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-[#F7F9FB] border-[#EAEAEA] text-slate-500">
+                    <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-slate-100 border-slate-200 text-slate-500">
                       {filteredData.length} registros
                     </span>
                   </div>
@@ -702,17 +702,17 @@ const App = () => {
               <div className="flex items-center gap-3 mb-6">
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="p-2 bg-white shadow-sm border border-[#E5E7EB] rounded-full hover:bg-[#F4F5F8] transition-colors"
+                  className="p-2 bg-white shadow-sm border border-slate-200 rounded-full hover:bg-slate-100 transition-colors"
                 >
                   <X size={18} />
                 </button>
-                <h2 className="text-xl font-bold text-[#74739E]">
+                <h2 className="text-xl font-bold text-slate-600">
                   {currentSection === 'alumnos' ? 'Detalle del Alumno' :
                    currentSection === 'cxc' ? 'Detalle de Cuenta' : 'Detalle Financiero'}
                 </h2>
                 <button
                   onClick={() => handleEdit(selectedItem)}
-                  className="ml-auto p-2 bg-[#A7C7E7] text-white rounded-xl hover:brightness-105 transition-all"
+                  className="ml-auto flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-xl hover:brightness-110 transition-all"
                   title="Editar"
                 >
                   <Pencil size={16} />
@@ -720,7 +720,7 @@ const App = () => {
               </div>
 
               {/* Header card */}
-              <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] mb-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div>
                     <h1 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">
@@ -728,7 +728,7 @@ const App = () => {
                        currentSection === 'cxc' ? selectedItem.concepto :
                        selectedItem.categoria}
                     </h1>
-                    <p className="text-slate-400 mt-1 text-sm">
+                    <p className="text-slate-500 mt-1 text-sm">
                       Ref: ID-{selectedItem.id.toString().padStart(4, '0')}
                     </p>
                   </div>
@@ -742,106 +742,106 @@ const App = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {currentSection === 'alumnos' ? (
                   <>
-                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
-                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Información Académica</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h5 className="text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-wider">Información Académica</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Grado</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Grado</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.grado}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Tutor</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Tutor</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.tutor}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Email</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Email</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.email}</span>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-slate-400">Teléfono</span>
+                          <span className="text-sm text-slate-500">Teléfono</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.telefono}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
-                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Fecha de Inscripción</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h5 className="text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-wider">Fecha de Inscripción</h5>
                       <p className="text-lg font-bold text-slate-700 mb-2">{selectedItem.fecha_inscripcion}</p>
-                      <p className="text-sm text-slate-400">Estado actual: {selectedItem.status}</p>
+                      <p className="text-sm text-slate-500">Estado actual: {selectedItem.status}</p>
                     </div>
                   </>
                 ) : currentSection === 'cxc' ? (
                   <>
-                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
-                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Información de Pago</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h5 className="text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-wider">Información de Pago</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Alumno</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Alumno</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.alumno_nombre}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Concepto</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Concepto</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.concepto}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Monto Total</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Monto Total</span>
                           <span className="text-sm font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Monto Pagado</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Monto Pagado</span>
                           <span className="text-sm font-semibold text-green-600">${parseFloat(selectedItem.monto_pagado).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-slate-400">Saldo Pendiente</span>
+                          <span className="text-sm text-slate-500">Saldo Pendiente</span>
                           <span className="text-sm font-bold text-red-600">${(parseFloat(selectedItem.monto) - parseFloat(selectedItem.monto_pagado)).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
-                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Fechas</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h5 className="text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-wider">Fechas</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Emisión</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Emisión</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.fecha_emision}</span>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-slate-400">Vencimiento</span>
+                          <span className="text-sm text-slate-500">Vencimiento</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.fecha_vencimiento}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-400 mt-4">Estado: {selectedItem.estado}</p>
+                      <p className="text-sm text-slate-500 mt-4">Estado: {selectedItem.estado}</p>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
-                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Información Financiera</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h5 className="text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-wider">Información Financiera</h5>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Tipo</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Tipo</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.tipo}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Categoría</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Categoría</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.categoria}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Monto</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Monto</span>
                           <span className="text-sm font-bold text-slate-700">${parseFloat(selectedItem.monto).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[#E5E7EB]">
-                          <span className="text-sm text-slate-400">Método de Pago</span>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Método de Pago</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.metodo_pago || 'N/A'}</span>
                         </div>
                         <div className="py-2">
-                          <span className="text-sm text-slate-400 block mb-1">Descripción</span>
+                          <span className="text-sm text-slate-500 block mb-1">Descripción</span>
                           <p className="text-sm text-slate-600">{selectedItem.descripcion || 'Sin descripción'}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB]">
-                      <h5 className="text-[10px] font-bold text-[#74739E] mb-4 uppercase tracking-wider">Fecha de Registro</h5>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h5 className="text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-wider">Fecha de Registro</h5>
                       <p className="text-lg font-bold text-slate-700 mb-2">{selectedItem.fecha}</p>
-                      <p className="text-sm text-slate-400">Estado: {selectedItem.estado}</p>
+                      <p className="text-sm text-slate-500">Estado: {selectedItem.estado}</p>
                     </div>
                   </>
                 )}
@@ -850,21 +850,21 @@ const App = () => {
           ) : (
             <div className="h-full overflow-y-auto">
               {currentSection === 'home' ? (
-                <div className="max-w-4xl mx-auto p-6 md:p-10">
+                <div className="w-full p-6 md:p-10">
                   <HomeDashboard cxcData={data.cxc} finanzasData={data.finanzas} />
                 </div>
               ) : (
                 <>
-                  <div className="w-24 h-24 bg-[#EAEAEA] rounded-[2rem] flex items-center justify-center mb-6 text-[#74739E]">
+                  <div className="w-24 h-24 bg-slate-100 rounded-[2rem] flex items-center justify-center mb-6 text-slate-600">
                     {currentSection === 'alumnos' ? <Users size={48} /> :
                      currentSection === 'cxc' ? <DollarSign size={48} /> :
                      <TrendingUp size={48} />}
                   </div>
-                  <h2 className="text-2xl font-bold text-[#74739E]">
+                  <h2 className="text-2xl font-bold text-slate-600">
                     {currentSection === 'alumnos' ? 'Alumnos' :
                      currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
                   </h2>
-                  <p className="text-slate-400 max-w-md mx-auto mt-2">
+                  <p className="text-slate-500 max-w-md mx-auto mt-2">
                     No hay registros para mostrar. Haz clic en el botón + para crear uno nuevo.
                   </p>
                 </>
@@ -876,7 +876,7 @@ const App = () => {
       </main>
 
       {/* BOTTOM NAVBAR */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-[#E5E7EB] z-50 flex items-center justify-around shadow-[0_-2px_8px_rgba(0,0,0,0.03)]">
+      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-sm border-t border-slate-200 z-50 flex items-center justify-around shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
         {[
           { id: 'home', icon: Home, label: 'Inicio' },
           { id: 'alumnos', icon: Users, label: 'Alumnos' },
@@ -896,12 +896,12 @@ const App = () => {
               }}
               className="relative flex flex-col items-center justify-center w-16 h-full transition-all"
             >
-              {isActive && <div className="absolute top-0 w-8 h-0.5 bg-[#A7C7E7] rounded-b-full shadow-[0_2px_6px_#A7C7E7]" />}
+              {isActive && <div className="absolute top-0 w-8 h-0.5 bg-brand-200 rounded-b-full shadow-[0_2px_6px_#6B9CC7]" />}
               <Icon
                 size={20}
-                className={`transition-colors ${isActive ? 'text-[#5A7A9A]' : 'text-slate-300'}`}
+                className={`transition-colors ${isActive ? 'text-brand-300' : 'text-slate-300'}`}
               />
-              <span className={`text-[9px] font-semibold mt-0.5 transition-colors ${isActive ? 'text-[#5A7A9A]' : 'text-slate-300'}`}>
+              <span className={`text-[9px] font-semibold mt-0.5 transition-colors ${isActive ? 'text-brand-300' : 'text-slate-300'}`}>
                 {tab.label}
               </span>
             </button>
@@ -913,9 +913,9 @@ const App = () => {
       {isFilterOpen && currentSection !== 'home' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
-          <div className="relative w-full max-w-lg bg-[#F7F9FB] rounded-[2rem] shadow-2xl p-8 border border-white animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-elevated p-8 border border-slate-200/50 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-black text-[#74739E]">
+              <h3 className="text-xl font-black text-slate-600">
                 {currentSection === 'alumnos' ? 'Filtrar Alumnos' :
                  currentSection === 'cxc' ? 'Filtrar Cuentas' : 'Filtrar Finanzas'}
               </h3>
@@ -928,11 +928,11 @@ const App = () => {
               {currentSection === 'alumnos' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Estado</label>
                     <select
                       value={filters.estado || ''}
                       onChange={(e) => setFilters({ ...filters, estado: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todos</option>
                       <option value="Activo">Activo</option>
@@ -941,11 +941,11 @@ const App = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grado</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Grado</label>
                     <select
                       value={filters.grado || ''}
                       onChange={(e) => setFilters({ ...filters, grado: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todos</option>
                       <option value="Pre-Kinder">Pre-Kinder</option>
@@ -959,11 +959,11 @@ const App = () => {
               {currentSection === 'cxc' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Estado</label>
                     <select
                       value={filters.estado || ''}
                       onChange={(e) => setFilters({ ...filters, estado: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todos</option>
                       <option value="Pagado">Pagado</option>
@@ -973,11 +973,11 @@ const App = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Concepto</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Concepto</label>
                     <select
                       value={filters.concepto || ''}
                       onChange={(e) => setFilters({ ...filters, concepto: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todos</option>
                       {tags.cxc.map(tag => <option key={tag} value={tag}>{tag}</option>)}
@@ -989,11 +989,11 @@ const App = () => {
               {currentSection === 'finanzas' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tipo</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo</label>
                     <select
                       value={filters.tipo || ''}
                       onChange={(e) => setFilters({ ...filters, tipo: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todos</option>
                       <option value="Ingreso">Ingreso</option>
@@ -1001,11 +1001,11 @@ const App = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Estado</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Estado</label>
                     <select
                       value={filters.estado || ''}
                       onChange={(e) => setFilters({ ...filters, estado: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todos</option>
                       <option value="Completado">Completado</option>
@@ -1013,11 +1013,11 @@ const App = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Categoría</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Categoría</label>
                     <select
                       value={filters.categoria || ''}
                       onChange={(e) => setFilters({ ...filters, categoria: e.target.value || undefined })}
-                      className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todas</option>
                       {tags.finanzas.map(tag => <option key={tag} value={tag}>{tag}</option>)}
@@ -1029,13 +1029,13 @@ const App = () => {
               <div className="flex gap-2 pt-4">
                 <button
                   onClick={clearFilters}
-                  className="flex-1 py-4 bg-[#EAEAEA] text-[#74739E] font-black rounded-xl active:scale-95 transition-all"
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-xl active:scale-95 transition-all"
                 >
                   LIMPIAR
                 </button>
                 <button
                   onClick={applyFilters}
-                  className="flex-1 py-4 bg-[#A7C7E7] text-white font-black rounded-xl shadow-lg shadow-[#A7C7E7]/30 active:scale-95 transition-all"
+                  className="flex-1 py-4 bg-[#5A7A9A] text-white font-black rounded-xl shadow-lg shadow-[#5A7A9A]/40 active:scale-95 transition-all"
                 >
                   APLICAR
                 </button>
@@ -1076,8 +1076,18 @@ const App = () => {
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #EAEAEA; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #74739E; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
+        .animate-in { animation: animate-in 0.3s ease-out; }
+        @keyframes animate-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in-from-right-10 { animation: slide-in-right 0.35s ease-out; }
+        @keyframes slide-in-right { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+        .zoom-in-95 { animation: zoom-in 0.2s ease-out; }
+        @keyframes zoom-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .fade-in { animation: fade-in 0.4s ease-out; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
   );

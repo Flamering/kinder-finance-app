@@ -4,16 +4,16 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white shadow-lg border border-[#EAEAEA] rounded-xl p-3">
-      <p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p>
-      <p className="text-sm font-black text-[#74739E]">${payload[0].value.toLocaleString()}</p>
+    <div className="bg-white shadow-lg border border-slate-200 rounded-xl p-3">
+      <p className="text-[10px] font-bold text-slate-500 uppercase">{label}</p>
+      <p className="text-sm font-black text-slate-700">${payload[0].value.toLocaleString()}</p>
     </div>
   );
 };
 
 const MonthlyChart = ({ data }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-    <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-card transition-shadow">
+    <h5 className="text-[10px] font-black text-slate-600 mb-4 uppercase tracking-tighter">
       CxC — Ingresos del mes (día a día)
     </h5>
     <ResponsiveContainer width="100%" height={240}>

@@ -4,7 +4,7 @@ const cards = [
   {
     key: 'facturas',
     label: 'Facturas del mes',
-    color: 'bg-[#A7C7E7]/10 border-[#A7C7E7]/30 text-[#74739E]',
+    color: 'bg-brand-50 border-brand-150/30 text-slate-600',
   },
   {
     key: 'mayor',

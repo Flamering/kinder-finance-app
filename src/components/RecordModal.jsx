@@ -70,7 +70,7 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#F7F9FB] rounded-[2rem] shadow-2xl p-8 border border-white animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-elevated p-8 border border-slate-200/50 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black text-[#74739E]">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg">
@@ -88,12 +88,12 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
           {section === 'alumnos' && (
             <>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nombre del Alumno *</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre del Alumno *</label>
                 <input
                   type="text"
                   value={formData.nombre || ''}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                   required
                 />
               </div>
@@ -107,30 +107,30 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                 required
               />
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tutor</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tutor</label>
                 <input
                   type="text"
                   value={formData.tutor || ''}
                   onChange={(e) => setFormData({ ...formData, tutor: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Teléfono</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Teléfono</label>
                 <input
                   type="text"
                   value={formData.telefono || ''}
                   onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Email</label>
                 <input
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                 />
               </div>
               <SelectField
@@ -166,23 +166,23 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                 required
               />
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Monto *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.monto || ''}
                   onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                   required
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Fecha de Vencimiento</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha de Vencimiento</label>
                 <input
                   type="date"
                   value={formData.fecha_vencimiento || ''}
                   onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                 />
               </div>
               <SelectField
@@ -221,31 +221,31 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                 required
               />
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto *</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Monto *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.monto || ''}
                   onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                   required
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Fecha</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label>
                 <input
                   type="date"
                   value={formData.fecha || ''}
                   onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Descripción</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Descripción</label>
                 <textarea
                   value={formData.descripcion || ''}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7] resize-none"
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200 resize-none"
                   rows="3"
                 />
               </div>
@@ -275,13 +275,13 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
           <div className="flex gap-2 pt-4">
             <button
               onClick={onClose}
-              className="flex-1 py-4 bg-[#EAEAEA] text-[#74739E] font-black rounded-xl active:scale-95 transition-all"
+              className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-xl active:scale-95 transition-all"
             >
               CANCELAR
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 py-4 bg-[#A7C7E7] text-white font-black rounded-xl shadow-lg shadow-[#A7C7E7]/30 active:scale-95 transition-all"
+              className="flex-1 py-4 bg-[#5A7A9A] text-white font-black rounded-xl shadow-lg shadow-[#5A7A9A]/40 active:scale-95 transition-all"
             >
               {submitLabel}
             </button>

@@ -53,8 +53,8 @@ const HomeDashboard = ({ cxcData = [], finanzasData = [] }) => {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <h2 className="text-2xl font-black text-[#74739E] mb-1">¿Cómo vamos hoy?</h2>
-      <p className="text-sm text-slate-400 mb-6">Resumen de cuentas por cobrar del mes actual</p>
+      <h2 className="text-2xl font-black text-slate-600 mb-1">¿Cómo vamos hoy?</h2>
+      <p className="text-sm text-slate-500 mb-6">Resumen de cuentas por cobrar del mes actual</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="md:col-span-2">

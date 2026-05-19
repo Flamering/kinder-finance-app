@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import MonthlyChart from './MonthlyChart';
 
 const PeriodComparison = ({ cxcData = [] }) => {
@@ -47,27 +48,27 @@ const PeriodComparison = ({ cxcData = [] }) => {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <h2 className="text-2xl font-black text-[#74739E] mb-1">Variación vs periodo anterior</h2>
-      <p className="text-sm text-slate-400 mb-6">Resumen de cuentas por cobrar contra el mes pasado</p>
+      <h2 className="text-2xl font-black text-slate-600 mb-1">Variación vs periodo anterior</h2>
+      <p className="text-sm text-slate-500 mb-6">Resumen de cuentas por cobrar contra el mes pasado</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="md:col-span-2">
           <MonthlyChart data={chartData} />
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA] flex flex-col justify-between">
-          <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-card transition-shadow flex flex-col justify-between">
+          <h5 className="text-[10px] font-black text-slate-600 mb-4 uppercase tracking-tighter">
             Total mes anterior
           </h5>
           <div className="flex-1 flex flex-col justify-center">
-            <div className="text-4xl font-black text-[#74739E]">
+            <div className="text-4xl font-black text-slate-600">
               ${totalAnterior.toLocaleString()}
             </div>
             <div className={`flex items-center gap-1 mt-2 ${variacion >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              <span className="text-lg font-black">{variacion >= 0 ? '↑' : '↓'}</span>
+              {variacion >= 0 ? <TrendingUp size={20} className="font-black" /> : <TrendingDown size={20} className="font-black" />}
               <span className="text-sm font-bold">{pctFormatted}</span>
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-4">Variación respecto al mes actual</p>
+          <p className="text-[10px] text-slate-500 mt-4">Variación respecto al mes actual</p>
         </div>
       </div>
 
@@ -76,8 +77,8 @@ const PeriodComparison = ({ cxcData = [] }) => {
           <div className="text-2xl font-black text-slate-600">${totalAnterior.toLocaleString()}</div>
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">Periodo anterior</div>
         </div>
-        <div className="p-4 rounded-2xl bg-[#A7C7E7]/10 border border-[#A7C7E7]/30">
-          <div className="text-2xl font-black text-[#74739E]">${totalActual.toLocaleString()}</div>
+        <div className="p-4 rounded-2xl bg-brand-50 border border-brand-150/30">
+          <div className="text-2xl font-black text-slate-600">${totalActual.toLocaleString()}</div>
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">Periodo actual</div>
         </div>
         <div className={`p-4 rounded-2xl border ${variacion >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>

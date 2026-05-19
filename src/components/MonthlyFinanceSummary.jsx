@@ -4,8 +4,8 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white shadow-lg border border-[#EAEAEA] rounded-xl p-3">
-      <p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p>
+    <div className="bg-white shadow-lg border border-slate-200 rounded-xl p-3">
+      <p className="text-[10px] font-bold text-slate-500 uppercase">{label}</p>
       {payload.map((entry, i) => (
         <p key={i} className={`text-sm font-black ${entry.dataKey === 'ingresos' ? 'text-green-600' : 'text-red-600'}`}>
           {entry.dataKey === 'ingresos' ? '+' : '-'}${Math.abs(entry.value).toLocaleString()}
@@ -60,13 +60,13 @@ const MonthlyFinanceSummary = ({ data = [] }) => {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <h2 className="text-2xl font-black text-[#74739E] mb-1">Resumen Financiero</h2>
-      <p className="text-sm text-slate-400 mb-6">Ingresos y gastos del mes</p>
+      <h2 className="text-2xl font-black text-slate-600 mb-1">Resumen Financiero</h2>
+      <p className="text-sm text-slate-500 mb-6">Ingresos y gastos del mes</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="md:col-span-2">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA]">
-            <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-card transition-shadow">
+            <h5 className="text-[10px] font-black text-slate-600 mb-4 uppercase tracking-tighter">
               Ingresos / Gastos del mes (día a día)
             </h5>
             <ResponsiveContainer width="100%" height={240}>
@@ -118,8 +118,8 @@ const MonthlyFinanceSummary = ({ data = [] }) => {
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#EAEAEA] flex flex-col justify-between">
-          <h5 className="text-[10px] font-black text-[#74739E] mb-4 uppercase tracking-tighter">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <h5 className="text-[10px] font-black text-slate-600 mb-4 uppercase tracking-tighter">
             Balance del mes
           </h5>
           <div className="flex-1 flex flex-col justify-center space-y-3">

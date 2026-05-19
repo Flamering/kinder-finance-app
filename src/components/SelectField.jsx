@@ -5,11 +5,11 @@ import CreatableSelect from 'react-select/creatable';
 const customStyles = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: '#EAEAEA',
+    backgroundColor: '#F1F5F9',
     border: 'none',
     borderRadius: '0.75rem',
     padding: '0.125rem 0.25rem',
-    boxShadow: state.isFocused ? '0 0 0 2px #A7C7E7' : 'none',
+    boxShadow: state.isFocused ? '0 0 0 2px #6B9CC7' : 'none',
     minHeight: '42px',
     cursor: 'pointer',
   }),
@@ -20,12 +20,12 @@ const customStyles = {
   }),
   singleValue: (base) => ({
     ...base,
-    color: '#4A5568',
+    color: '#334155',
     fontSize: '0.875rem',
   }),
   input: (base) => ({
     ...base,
-    color: '#4A5568',
+    color: '#334155',
     fontSize: '0.875rem',
   }),
   menu: (base) => ({
@@ -40,7 +40,7 @@ const customStyles = {
   }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected ? '#A7C7E7' : state.isFocused ? '#A7C7E730' : 'white',
+    backgroundColor: state.isSelected ? '#6B9CC7' : state.isFocused ? '#6B9CC720' : 'white',
     color: state.isSelected ? 'white' : '#4A5568',
     fontSize: '0.875rem',
     cursor: 'pointer',
@@ -52,7 +52,7 @@ const customStyles = {
     ...base,
     color: '#94a3b8',
     padding: '0.5rem',
-    '&:hover': { color: '#74739E' },
+    '&:hover': { color: '#475569' },
   }),
   clearIndicator: (base) => ({
     ...base,
@@ -62,12 +62,12 @@ const customStyles = {
   }),
   multiValue: (base) => ({
     ...base,
-    backgroundColor: '#A7C7E720',
+    backgroundColor: '#6B9CC720',
     borderRadius: '0.5rem',
   }),
   multiValueLabel: (base) => ({
     ...base,
-    color: '#4A5568',
+    color: '#334155',
     fontSize: '0.875rem',
   }),
   multiValueRemove: (base) => ({
@@ -110,7 +110,7 @@ const SelectField = ({
   return (
     <div className="space-y-1">
       {label && (
-        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+        <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">
           {label}{required && ' *'}
         </label>
       )}
