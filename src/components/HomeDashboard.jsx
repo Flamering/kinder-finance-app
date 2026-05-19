@@ -3,8 +3,9 @@ import MonthlyChart from './MonthlyChart';
 import MonthlySummary from './MonthlySummary';
 import MiniCards from './MiniCards';
 import PeriodComparison from './PeriodComparison';
+import MonthlyFinanceSummary from './MonthlyFinanceSummary';
 
-const HomeDashboard = ({ cxcData = [] }) => {
+const HomeDashboard = ({ cxcData = [], finanzasData = [] }) => {
   const { chartData, mesActual, vsAnterior, stats } = useMemo(() => {
     const now = new Date();
     const anio = now.getFullYear();
@@ -66,6 +67,10 @@ const HomeDashboard = ({ cxcData = [] }) => {
 
       <div className="mt-10">
         <PeriodComparison cxcData={cxcData} />
+      </div>
+
+      <div className="mt-10">
+        <MonthlyFinanceSummary data={finanzasData} />
       </div>
     </div>
   );

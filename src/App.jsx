@@ -588,7 +588,7 @@ const App = () => {
               </div>
 
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className={`grid grid-cols-1 gap-4 mb-6 ${currentSection === 'finanzas' ? 'sm:grid-cols-5' : 'sm:grid-cols-3'}`}>
                   {currentSection === 'alumnos' && (() => {
                     const activos = filteredData.filter(i => i.estado === 'Activo').length;
                     const morosos = filteredData.filter(i => i.estado === 'Moroso').length;
@@ -636,6 +636,9 @@ const App = () => {
                     const gastos = filteredData.filter(i => i.tipo === 'Gasto').reduce((s, i) => s + parseFloat(i.monto), 0);
                     const pendientes = filteredData.filter(i => i.estado === 'Pendiente').length;
                     const total = ingresos - gastos;
+                    const nomina = filteredData
+                      .filter(i => i.categoria?.toLowerCase() === 'nómina')
+                      .reduce((s, i) => s + parseFloat(i.monto), 0);
                     return (
                       <>
                         <div className="p-4 rounded-2xl bg-green-50 border border-green-200">
@@ -653,6 +656,10 @@ const App = () => {
                         <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
                           <div className="text-2xl font-black text-yellow-700">{pendientes}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Pendientes</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
+                          <div className="text-2xl font-black text-orange-600">${nomina.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Nómina</div>
                         </div>
                       </>
                     );
@@ -840,7 +847,7 @@ const App = () => {
             <div className="h-full overflow-y-auto">
               {currentSection === 'home' ? (
                 <div className="max-w-4xl mx-auto p-6 md:p-10">
-                  <HomeDashboard cxcData={data.cxc} />
+                  <HomeDashboard cxcData={data.cxc} finanzasData={data.finanzas} />
                 </div>
               ) : (
                 <>
