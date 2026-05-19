@@ -25,7 +25,7 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
     switch (section) {
       case 'alumnos': return { estado: 'Activo' };
       case 'cxc': return { estado: 'Pendiente' };
-      case 'finanzas': return { tipo: 'Ingreso', estado: 'Completado' };
+      case 'finanzas': return { tipo: 'Ingreso', estado: 'Completado', fecha: new Date().toISOString().split('T')[0] };
       default: return {};
     }
   };
@@ -229,6 +229,15 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                   onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
                   className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
                   required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Fecha</label>
+                <input
+                  type="date"
+                  value={formData.fecha || ''}
+                  onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+                  className="w-full p-3 bg-[#EAEAEA] border-none rounded-xl outline-none focus:ring-2 focus:ring-[#A7C7E7]"
                 />
               </div>
               <div className="space-y-1">
