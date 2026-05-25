@@ -8,6 +8,7 @@ import {
   TrendingUp,
   X,
   ChevronRight,
+  ChevronLeft,
   Plus,
   Info,
   LayoutList,
@@ -16,7 +17,9 @@ import {
   Trash2,
   Eye,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Calendar,
+  Check
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
 import HomeDashboard from './components/HomeDashboard';
@@ -28,6 +31,98 @@ const COLORS = {
   secondary: '#E2E8F0',
   tertiary: '#475569',
   neutral: '#F0F2F5'
+};
+
+// Componente: Modal de Ajuste de Nómina
+const NominaAdjustmentModal = ({ isOpen, onClose, selectedMonth, nominaCalculada, nominaAdjustments, onSave, onRemove }) => {
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const nominaKey = `${selectedMonth.anio}-${String(selectedMonth.mes + 1).padStart(2, '0')}`;
+  const ajusteExistente = nominaAdjustments[nominaKey];
+  const [ajusteMonto, setAjusteMonto] = useState(ajusteExistente?.monto || 0);
+  const [ajusteDescripcion, setAjusteDescripcion] = useState(ajusteExistente?.descripcion || '');
+
+  React.useEffect(() => {
+    if (ajusteExistente) {
+      setAjusteMonto(ajusteExistente.monto);
+      setAjusteDescripcion(ajusteExistente.descripcion || '');
+    } else {
+      setAjusteMonto(0);
+      setAjusteDescripcion('');
+    }
+  }, [ajusteExistente]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-elevated p-8 border border-slate-200/50 animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-black text-slate-600">Ajuste de Nómina</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="mb-4 p-3 bg-orange-50 rounded-xl border border-orange-200">
+          <div className="text-xs font-bold text-slate-500 uppercase">Período</div>
+          <div className="text-sm font-semibold text-slate-700">{monthNames[selectedMonth.mes]} {selectedMonth.anio}</div>
+        </div>
+
+        <div className="mb-4 p-3 bg-slate-50 rounded-xl">
+          <div className="text-xs font-bold text-slate-500 uppercase">Nómina calculada</div>
+          <div className="text-lg font-black text-orange-600">${nominaCalculada.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Ajuste (positivo o negativo)</label>
+            <input
+              type="number"
+              value={ajusteMonto}
+              onChange={(e) => setAjusteMonto(parseFloat(e.target.value) || 0)}
+              className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200 text-lg font-bold"
+              placeholder="0.00"
+              step="0.01"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Descripción (opcional)</label>
+            <input
+              type="text"
+              value={ajusteDescripcion}
+              onChange={(e) => setAjusteDescripcion(e.target.value)}
+              className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+              placeholder="Ej: Ajuste por horas extra"
+            />
+          </div>
+
+          <div className="p-3 bg-brand-50 rounded-xl">
+            <div className="text-xs font-bold text-slate-500 uppercase">Total con ajuste</div>
+            <div className="text-xl font-black text-slate-700">${(nominaCalculada + ajusteMonto).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-6">
+          {ajusteExistente && (
+            <button
+              onClick={() => { onRemove(); onClose(); }}
+              className="px-4 py-4 bg-red-50 text-red-600 font-black rounded-xl active:scale-95 transition-all border border-red-200"
+            >
+              ELIMINAR
+            </button>
+          )}
+          <button
+            onClick={() => onSave(ajusteMonto, ajusteDescripcion)}
+            className="flex-1 py-4 bg-[#5A7A9A] text-white font-black rounded-xl shadow-lg shadow-[#5A7A9A]/40 active:scale-95 transition-all"
+          >
+            GUARDAR
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const App = () => {
@@ -61,6 +156,15 @@ const App = () => {
   const filteredDataRef = React.useRef([]);
   const listContainerRef = React.useRef(null);
 
+  // Estado para selector de mes/año en finanzas
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState({ mes: now.getMonth(), anio: now.getFullYear() });
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+
+  // Estado para ajuste de nómina
+  const [showNominaModal, setShowNominaModal] = useState(false);
+  const [nominaAdjustments, setNominaAdjustments] = useState({});
+
   // Cargar etiquetas desde localStorage
   useEffect(() => {
     const savedTags = localStorage.getItem('kinder-finance-tags');
@@ -89,6 +193,25 @@ const App = () => {
     }
   }, [tags]);
 
+  // Cargar ajustes de nómina desde localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('kinder-finance-nomina-adjustments');
+    if (saved) {
+      try {
+        setNominaAdjustments(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading nomina adjustments:', e);
+      }
+    }
+  }, []);
+
+  // Guardar ajustes de nómina en localStorage cuando cambian
+  useEffect(() => {
+    if (Object.keys(nominaAdjustments).length > 0) {
+      localStorage.setItem('kinder-finance-nomina-adjustments', JSON.stringify(nominaAdjustments));
+    }
+  }, [nominaAdjustments]);
+
   // Detectar si es mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -112,6 +235,11 @@ const App = () => {
   useEffect(() => {
     setVisibleCount(8);
   }, [searchTerm]);
+
+  // Cerrar dropdown de meses al cambiar de sección
+  useEffect(() => {
+    setShowMonthDropdown(false);
+  }, [currentSection]);
 
   // Cargar todas las secciones al iniciar
   useEffect(() => {
@@ -217,6 +345,69 @@ const App = () => {
   // Función para limpiar filtros
   const clearFilters = () => {
     setFilters({});
+  };
+
+  // Helpers para meses disponibles en finanzas
+  const getAvailableMonths = (finanzasData) => {
+    const months = new Map();
+    finanzasData.forEach(item => {
+      if (!item.fecha || item.eliminado) return;
+      const d = new Date(item.fecha);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!months.has(key)) {
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        months.set(key, { mes: d.getMonth(), anio: d.getFullYear(), label: `${monthNames[d.getMonth()]} ${d.getFullYear()}` });
+      }
+    });
+    return Array.from(months.values()).sort((a, b) => {
+      if (a.anio !== b.anio) return b.anio - a.anio;
+      return b.mes - a.mes;
+    });
+  };
+
+  // Filtrar datos por mes/año seleccionado
+  const filterByMonth = (data, mes, anio) => {
+    return data.filter(item => {
+      if (!item.fecha) return false;
+      const d = new Date(item.fecha);
+      return d.getFullYear() === anio && d.getMonth() === mes && !item.eliminado;
+    });
+  };
+
+  // Navegar al mes anterior/siguiente
+  const navigateMonth = (direction) => {
+    setSelectedMonth(prev => {
+      let newMes = prev.mes + direction;
+      let newAnio = prev.anio;
+      if (newMes < 0) {
+        newMes = 11;
+        newAnio--;
+      } else if (newMes > 11) {
+        newMes = 0;
+        newAnio++;
+      }
+      return { mes: newMes, anio: newAnio };
+    });
+  };
+
+  // Guardar ajuste de nómina
+  const saveNominaAdjustment = (monto, descripcion) => {
+    const key = `${selectedMonth.anio}-${String(selectedMonth.mes + 1).padStart(2, '0')}`;
+    setNominaAdjustments(prev => ({
+      ...prev,
+      [key]: { monto, descripcion }
+    }));
+    setShowNominaModal(false);
+  };
+
+  // Eliminar ajuste de nómina
+  const removeNominaAdjustment = () => {
+    const key = `${selectedMonth.anio}-${String(selectedMonth.mes + 1).padStart(2, '0')}`;
+    setNominaAdjustments(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   // Función para obtener datos filtrados
@@ -636,34 +827,114 @@ const App = () => {
                     );
                   })()}
                   {currentSection === 'finanzas' && (() => {
-                    const ingresos = filteredData.filter(i => i.tipo === 'Ingreso').reduce((s, i) => s + parseFloat(i.monto), 0);
-                    const gastos = filteredData.filter(i => i.tipo === 'Gasto').reduce((s, i) => s + parseFloat(i.monto), 0);
-                    const pendientes = filteredData.filter(i => i.estado === 'Pendiente').length;
+                    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    const availableMonths = getAvailableMonths(data.finanzas);
+                    const monthData = filterByMonth(filteredData, selectedMonth.mes, selectedMonth.anio);
+                    const currentMonthLabel = `${monthNames[selectedMonth.mes]} ${selectedMonth.anio}`;
+
+                    const ingresos = monthData.filter(i => i.tipo === 'Ingreso').reduce((s, i) => s + parseFloat(i.monto), 0);
+                    const gastos = monthData.filter(i => i.tipo === 'Gasto').reduce((s, i) => s + parseFloat(i.monto), 0);
+                    const pendientes = monthData.filter(i => i.estado === 'Pendiente').length;
                     const total = ingresos - gastos;
-                    const nomina = filteredData
+                    const nominaCalculada = monthData
                       .filter(i => i.categoria?.toLowerCase() === 'nómina')
                       .reduce((s, i) => s + parseFloat(i.monto), 0);
+                    const nominaKey = `${selectedMonth.anio}-${String(selectedMonth.mes + 1).padStart(2, '0')}`;
+                    const nominaAjuste = nominaAdjustments[nominaKey]?.monto || 0;
+                    const nominaTotal = nominaCalculada + nominaAjuste;
+
                     return (
                       <>
-                        <div className="p-4 rounded-2xl bg-green-50 border border-green-200">
-                          <div className="text-2xl font-black text-green-600">+${ingresos.toLocaleString()}</div>
-                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Ingresos</div>
+                        {/* Selector de mes/año */}
+                        <div className="mb-4 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigateMonth(-1)}
+                              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
+                            >
+                              <ChevronLeft size={18} />
+                            </button>
+                            <span className="text-sm font-bold text-slate-700 min-w-[140px] text-center">{currentMonthLabel}</span>
+                            <button
+                              onClick={() => navigateMonth(1)}
+                              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
+                            >
+                              <ChevronRight size={18} />
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowMonthDropdown(!showMonthDropdown)}
+                              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 transition-colors flex items-center gap-1"
+                            >
+                              <Calendar size={16} />
+                              <span className="text-xs font-bold text-slate-600">Meses</span>
+                            </button>
+                            {showMonthDropdown && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowMonthDropdown(false)} />
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-elevated border border-slate-200 z-50 max-h-64 overflow-y-auto">
+                                  {availableMonths.length === 0 ? (
+                                    <div className="p-3 text-xs text-slate-500 text-center">Sin registros</div>
+                                  ) : (
+                                    availableMonths.map((m, idx) => (
+                                      <button
+                                        key={idx}
+                                        onClick={() => {
+                                          setSelectedMonth({ mes: m.mes, anio: m.anio });
+                                          setShowMonthDropdown(false);
+                                        }}
+                                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 transition-colors flex items-center justify-between ${
+                                          m.mes === selectedMonth.mes && m.anio === selectedMonth.anio
+                                            ? 'bg-brand-50 text-brand-300'
+                                            : 'text-slate-700'
+                                        }`}
+                                      >
+                                        <span>{m.label}</span>
+                                        {m.mes === selectedMonth.mes && m.anio === selectedMonth.anio && (
+                                          <Check size={14} />
+                                        )}
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
-                          <div className="text-2xl font-black text-red-600">-${gastos.toLocaleString()}</div>
-                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Gastos</div>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-brand-50 border border-brand-150/30">
-                          <div className="text-2xl font-black text-slate-600">${total.toLocaleString()}</div>
-                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Total</div>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
-                          <div className="text-2xl font-black text-yellow-700">{pendientes}</div>
-                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Pendientes</div>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
-                          <div className="text-2xl font-black text-orange-600">${nomina.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Nómina</div>
+
+                        {/* Cards de resultado */}
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-6">
+                          <div className="p-4 rounded-2xl bg-green-50 border border-green-200">
+                            <div className="text-2xl font-black text-green-600">+${ingresos.toLocaleString()}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Ingresos</div>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
+                            <div className="text-2xl font-black text-red-600">-${gastos.toLocaleString()}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Gastos</div>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-brand-50 border border-brand-150/30">
+                            <div className="text-2xl font-black text-slate-600">${total.toLocaleString()}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Total</div>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
+                            <div className="text-2xl font-black text-yellow-700">{pendientes}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Pendientes</div>
+                          </div>
+                          <button
+                            onClick={() => setShowNominaModal(true)}
+                            className="p-4 rounded-2xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-colors text-left relative cursor-pointer"
+                          >
+                            <div className="text-2xl font-black text-orange-600">${nominaTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Nómina</div>
+                            {nominaAjuste !== 0 && (
+                              <span className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-black ${
+                                nominaAjuste > 0 ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                              }`}>
+                                {nominaAjuste > 0 ? '+' : ''}{nominaAjuste.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            )}
+                          </button>
                         </div>
                       </>
                     );
@@ -1071,6 +1342,26 @@ const App = () => {
               {...sharedProps}
             />
           </>
+        );
+      })()}
+
+      {/* MODAL DE AJUSTE DE NÓMINA */}
+      {(() => {
+        const monthData = filterByMonth(filteredData, selectedMonth.mes, selectedMonth.anio);
+        const nominaCalculada = monthData
+          .filter(i => i.categoria?.toLowerCase() === 'nómina')
+          .reduce((s, i) => s + parseFloat(i.monto), 0);
+
+        return (
+          <NominaAdjustmentModal
+            isOpen={showNominaModal}
+            onClose={() => setShowNominaModal(false)}
+            selectedMonth={selectedMonth}
+            nominaCalculada={nominaCalculada}
+            nominaAdjustments={nominaAdjustments}
+            onSave={saveNominaAdjustment}
+            onRemove={removeNominaAdjustment}
+          />
         );
       })()}
 
