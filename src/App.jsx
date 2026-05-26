@@ -783,7 +783,7 @@ const App = () => {
               </div>
 
               {/* Summary Cards */}
-              <div className={`grid grid-cols-1 gap-4 mb-6 ${currentSection === 'finanzas' ? 'sm:grid-cols-5' : 'sm:grid-cols-3'}`}>
+              <div className={`${currentSection === 'finanzas' ? 'mb-6' : 'grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3'}`}>
                   {currentSection === 'alumnos' && (() => {
                     const activos = filteredData.filter(i => i.estado === 'Activo').length;
                     const morosos = filteredData.filter(i => i.estado === 'Moroso').length;
