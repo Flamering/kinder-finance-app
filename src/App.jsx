@@ -19,11 +19,13 @@ import {
   Loader2,
   AlertCircle,
   Calendar,
-  Check
+  Check,
+  FileDown
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
 import HomeDashboard from './components/HomeDashboard';
 import { fetchSectionData, createRecord, updateRecord, softDeleteRecord } from './lib/api';
+import { exportCxcVencidosPDF } from './lib/pdfExport';
 
 // --- Constantes de Diseño ---
 const COLORS = {
@@ -957,6 +959,16 @@ const App = () => {
                     <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-slate-100 border-slate-200 text-slate-500">
                       {filteredData.length} registros
                     </span>
+                    {currentSection === 'cxc' && (
+                      <button
+                        onClick={() => exportCxcVencidosPDF(filteredData)}
+                        className="ml-3 flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 active:scale-95 transition-all text-xs font-semibold"
+                        title="Exportar PDF de cuentas vencidas"
+                      >
+                        <FileDown size={14} />
+                        Exportar PDF
+                      </button>
+                    )}
                   </div>
 
                   <div className="overflow-x-auto">
@@ -1385,3 +1397,8 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
+
