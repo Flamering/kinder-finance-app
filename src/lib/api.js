@@ -42,3 +42,22 @@ export async function softDeleteRecord(section, id) {
     .eq('id', id);
   if (error) throw error;
 }
+
+export async function createBulkRecords(section, records) {
+  const sectionDefaults = {
+    finanzas: { tipo: 'Ingreso', estado: 'Completado' },
+    alumnos: { estado: 'Activo' },
+    cxc: { estado: 'Pendiente' },
+  };
+  const enriched = records.map(r => ({
+    ...(sectionDefaults[section] || {}),
+    ...r,
+    eliminado: false,
+  }));
+  const { data: result, error } = await supabase
+    .from(section)
+    .insert(enriched)
+    .select();
+  if (error) throw error;
+  return result || [];
+}

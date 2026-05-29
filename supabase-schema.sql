@@ -238,7 +238,8 @@ CREATE TABLE IF NOT EXISTS maestros_salones (
 ALTER TABLE alumnos 
   ADD COLUMN IF NOT EXISTS tutor_id UUID REFERENCES tutores(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS salon_id UUID REFERENCES salones(id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS eliminado BOOLEAN DEFAULT false;
+  ADD COLUMN IF NOT EXISTS eliminado BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS monto_colegiatura DECIMAL(10,2);
 
 -- =============================================
 -- CREAR ÍNDICES PARA MEJOR RENDIMIENTO

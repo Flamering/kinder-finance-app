@@ -107,6 +107,17 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                 required
               />
               <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Monto Colegiatura</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.monto_colegiatura || ''}
+                  onChange={(e) => setFormData({ ...formData, monto_colegiatura: e.target.value })}
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tutor</label>
                 <input
                   type="text"

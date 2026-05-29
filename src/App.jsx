@@ -20,11 +20,12 @@ import {
   AlertCircle,
   Calendar,
   Check,
-  FileDown
+  FileDown,
+  ReceiptText
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
 import HomeDashboard from './components/HomeDashboard';
-import { fetchSectionData, createRecord, updateRecord, softDeleteRecord } from './lib/api';
+import { fetchSectionData, createRecord, updateRecord, softDeleteRecord, createBulkRecords } from './lib/api';
 import { exportCxcVencidosPDF } from './lib/pdfExport';
 
 // --- Constantes de Diseño ---
@@ -127,6 +128,154 @@ const NominaAdjustmentModal = ({ isOpen, onClose, selectedMonth, nominaCalculada
   );
 };
 
+const ColegiaturaModal = ({ isOpen, onClose, alumnos, onConfirm }) => {
+  const [concepto, setConcepto] = useState('Colegiatura');
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const alumnosElegibles = alumnos.filter(
+    a => a.estado !== 'Inactivo' && a.monto_colegiatura && parseFloat(a.monto_colegiatura) > 0
+  );
+
+  const totalMonto = alumnosElegibles.reduce(
+    (sum, a) => sum + parseFloat(a.monto_colegiatura), 0
+  );
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setConcepto('Colegiatura');
+      setFechaVencimiento('');
+      setError(null);
+      setLoading(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    if (!concepto.trim()) {
+      setError('El concepto es obligatorio');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await onConfirm(alumnosElegibles, concepto.trim(), fechaVencimiento || null);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-elevated p-8 border border-slate-200/50 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#5A7A9A]/10 rounded-xl flex items-center justify-center">
+              <ReceiptText size={20} className="text-[#5A7A9A]" />
+            </div>
+            <h3 className="text-xl font-black text-slate-600">Generar Colegiaturas</h3>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
+        {alumnosElegibles.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
+            <AlertCircle size={40} className="text-slate-300 mb-3" />
+            <p className="text-sm text-slate-500">No hay alumnos elegibles.</p>
+            <p className="text-xs text-slate-400 mt-1">Se requieren alumnos activos con monto de colegiatura registrado.</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 p-3 bg-brand-50 rounded-xl border border-brand-150/30">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-500 uppercase">Alumnos a procesar</span>
+                <span className="text-sm font-black text-slate-700">{alumnosElegibles.length}</span>
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs font-bold text-slate-500 uppercase">Total a generar</span>
+                <span className="text-lg font-black text-[#5A7A9A]">${totalMonto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto mb-4 max-h-48 rounded-xl border border-slate-200">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="p-2 text-[10px] font-bold text-slate-500 uppercase">Alumno</th>
+                    <th className="p-2 text-[10px] font-bold text-slate-500 uppercase">Grado</th>
+                    <th className="p-2 text-[10px] font-bold text-slate-500 uppercase text-right">Colegiatura</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {alumnosElegibles.map(a => (
+                    <tr key={a.id}>
+                      <td className="p-2 text-sm font-semibold text-slate-700">{a.nombre}</td>
+                      <td className="p-2 text-xs text-slate-500">{a.grado}</td>
+                      <td className="p-2 text-sm font-bold text-slate-700 text-right">${parseFloat(a.monto_colegiatura).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Concepto</label>
+                <input
+                  type="text"
+                  value={concepto}
+                  onChange={(e) => setConcepto(e.target.value)}
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha de Vencimiento</label>
+                <input
+                  type="date"
+                  value={fechaVencimiento}
+                  onChange={(e) => setFechaVencimiento(e.target.value)}
+                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-xl active:scale-95 transition-all"
+          >
+            CANCELAR
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={alumnosElegibles.length === 0 || loading}
+            className="flex-1 py-4 bg-[#5A7A9A] text-white font-black rounded-xl shadow-lg shadow-[#5A7A9A]/40 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+            {loading ? 'GENERANDO...' : 'CONFIRMAR'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedItem, setSelectedItem] = useState(null);
@@ -166,6 +315,9 @@ const App = () => {
   // Estado para ajuste de nómina
   const [showNominaModal, setShowNominaModal] = useState(false);
   const [nominaAdjustments, setNominaAdjustments] = useState({});
+
+  // Estado para modal de generar colegiaturas
+  const [showColegiaturaModal, setShowColegiaturaModal] = useState(false);
 
   // Cargar etiquetas desde localStorage
   useEffect(() => {
@@ -412,6 +564,26 @@ const App = () => {
     });
   };
 
+  // Generar adeudos de colegiatura en CxC
+  const handleGenerarColegiaturas = async (alumnosElegibles, concepto, fechaVencimiento) => {
+    const records = alumnosElegibles.map(a => ({
+      alumno_id: a.id,
+      alumno_nombre: a.nombre,
+      concepto,
+      monto: parseFloat(a.monto_colegiatura),
+      fecha_vencimiento: fechaVencimiento,
+      estado: 'Pendiente',
+    }));
+    const result = await createBulkRecords('cxc', records);
+    setData(prev => ({
+      ...prev,
+      cxc: [...result, ...prev.cxc],
+    }));
+    setCurrentSection('cxc');
+    setActiveTab('cxc');
+    setSelectedItem('__table__');
+  };
+
   // Función para obtener datos filtrados
   const getFilteredData = () => {
     let filtered = sectionData;
@@ -516,7 +688,9 @@ const App = () => {
                   {item.estado}
                 </span>
               </td>
-              <td className="p-4 text-sm text-slate-500">{item.fecha_inscripcion || '—'}</td>
+              <td className="p-4 text-sm font-semibold text-slate-700">
+                {item.monto_colegiatura ? `$${parseFloat(item.monto_colegiatura).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+              </td>
             </>
           );
         case 'cxc':
@@ -567,7 +741,7 @@ const App = () => {
                 </th>
                 <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest text-center">Estado</th>
                 <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                  {section === 'alumnos' ? 'Inscripción' : section === 'cxc' ? 'Monto' : 'Monto'}
+                  {section === 'alumnos' ? 'Colegiatura' : section === 'cxc' ? 'Monto' : 'Monto'}
                 </th>
                 <th className="p-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest text-right">Acciones</th>
               </tr>
@@ -626,12 +800,24 @@ const App = () => {
                currentSection === 'alumnos' ? 'Alumnos' : 
                currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
             </h2>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
-            >
-              <Plus size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              {currentSection === 'alumnos' && (
+                <button
+                  onClick={() => setShowColegiaturaModal(true)}
+                  className="flex items-center gap-1.5 px-3 h-9 bg-orange-500 text-white text-xs font-bold rounded-lg shadow-md hover:shadow-lg hover:bg-orange-600 active:scale-95 transition-all duration-200"
+                  title="Generar adeudos de colegiatura en CxC"
+                >
+                  <ReceiptText size={14} />
+                  <span className="hidden sm:inline">Colegiaturas</span>
+                </button>
+              )}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
+              >
+                <Plus size={18} />
+              </button>
+            </div>
           </div>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -724,7 +910,7 @@ const App = () => {
                          `${item.tipo}: ${item.categoria}`}
                       </h4>
                       <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                        {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}` :
+                        {currentSection === 'alumnos' ? `${item.grado} • ${item.tutor}${item.monto_colegiatura ? ` • $${parseFloat(item.monto_colegiatura).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}` :
                          currentSection === 'cxc' ? `$${item.monto} • Vence: ${item.fecha_vencimiento}` :
                          `$${parseFloat(item.monto).toLocaleString()} • ${item.fecha}`}
                       </p>
@@ -1031,6 +1217,12 @@ const App = () => {
                         <div className="flex justify-between items-center py-2 border-b border-slate-200">
                           <span className="text-sm text-slate-500">Grado</span>
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.grado}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Colegiatura</span>
+                          <span className="text-sm font-bold text-slate-700">
+                            {selectedItem.monto_colegiatura ? `$${parseFloat(selectedItem.monto_colegiatura).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-slate-200">
                           <span className="text-sm text-slate-500">Tutor</span>
@@ -1376,6 +1568,13 @@ const App = () => {
           />
         );
       })()}
+
+      <ColegiaturaModal
+        isOpen={showColegiaturaModal}
+        onClose={() => setShowColegiaturaModal(false)}
+        alumnos={data.alumnos}
+        onConfirm={handleGenerarColegiaturas}
+      />
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
