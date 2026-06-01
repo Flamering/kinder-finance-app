@@ -24,6 +24,7 @@ import {
   ReceiptText
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
+import PagoModal from './components/PagoModal';
 import HomeDashboard from './components/HomeDashboard';
 import { fetchSectionData, createRecord, updateRecord, softDeleteRecord, createBulkRecords } from './lib/api';
 import { exportCxcVencidosPDF } from './lib/pdfExport';
@@ -297,6 +298,10 @@ const App = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
+  // Estados para modal de pago
+  const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
+  const [pagoRecord, setPagoRecord] = useState(null);
+
   // Estados para sistema de etiquetas
   const [tags, setTags] = useState({ alumnos: [], cxc: [], finanzas: [] });
 
@@ -486,6 +491,52 @@ const App = () => {
       setIsEditModalOpen(false);
     } catch (err) {
       console.error('Error al actualizar:', err);
+      throw err;
+    }
+  };
+
+  const handleOpenPago = (record) => {
+    setPagoRecord(record);
+    setIsPagoModalOpen(true);
+  };
+
+  const handlePago = async ({ montoPago, fecha, metodoPago }) => {
+    if (!pagoRecord) return;
+    try {
+      const montoActual = parseFloat(pagoRecord.monto_pagado) || 0;
+      const montoTotal = parseFloat(pagoRecord.monto) || 0;
+      const nuevoMontoPagado = montoActual + montoPago;
+      const nuevoEstado = nuevoMontoPagado >= montoTotal ? 'Pagado' : 'Parcial';
+
+      const updatedCxc = await updateRecord('cxc', pagoRecord.id, {
+        monto_pagado: nuevoMontoPagado,
+        estado: nuevoEstado,
+      });
+
+      const newFinanza = await createRecord('finanzas', {
+        tipo: 'Ingreso',
+        categoria: 'Mensualidad',
+        monto: montoPago,
+        fecha,
+        metodo_pago: metodoPago,
+        estado: 'Completado',
+        descripcion: `Pago CxC - ${pagoRecord.concepto} - ${pagoRecord.alumno_nombre}`,
+      });
+
+      setData(prev => ({
+        ...prev,
+        cxc: prev.cxc.map(item => item.id === pagoRecord.id ? updatedCxc : item),
+        finanzas: [newFinanza, ...prev.finanzas],
+      }));
+
+      if (selectedItem?.id === pagoRecord.id) {
+        setSelectedItem(updatedCxc);
+      }
+
+      setIsPagoModalOpen(false);
+      setPagoRecord(null);
+    } catch (err) {
+      console.error('Error al procesar pago:', err);
       throw err;
     }
   };
@@ -761,6 +812,15 @@ const App = () => {
                       >
                         <Eye size={16} />
                       </button>
+                      {section === 'cxc' && item.estado !== 'Pagado' && (
+                        <button
+                          onClick={() => handleOpenPago(item)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Registrar Pago"
+                        >
+                          <DollarSign size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleEdit(item)}
                         className="p-2 text-slate-600 hover:bg-[#74739E]/10 rounded-lg transition-colors"
@@ -1181,6 +1241,15 @@ const App = () => {
                   {currentSection === 'alumnos' ? 'Detalle del Alumno' :
                    currentSection === 'cxc' ? 'Detalle de Cuenta' : 'Detalle Financiero'}
                 </h2>
+                {currentSection === 'cxc' && selectedItem.estado !== 'Pagado' && (
+                  <button
+                    onClick={() => handleOpenPago(selectedItem)}
+                    className="flex items-center justify-center w-9 h-9 bg-green-600 text-white rounded-xl hover:brightness-110 transition-all"
+                    title="Registrar Pago"
+                  >
+                    <DollarSign size={16} />
+                  </button>
+                )}
                 <button
                   onClick={() => handleEdit(selectedItem)}
                   className="ml-auto flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-xl hover:brightness-110 transition-all"
@@ -1564,6 +1633,12 @@ const App = () => {
               initialData={editingItem}
               onSave={handleUpdate}
               {...sharedProps}
+            />
+            <PagoModal
+              isOpen={isPagoModalOpen}
+              onClose={() => { setIsPagoModalOpen(false); setPagoRecord(null); }}
+              record={pagoRecord}
+              onConfirm={handlePago}
             />
           </>
         );
