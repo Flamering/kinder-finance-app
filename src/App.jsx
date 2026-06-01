@@ -604,6 +604,8 @@ const App = () => {
       filtered = filtered.filter(item => {
         return Object.entries(filters).every(([key, value]) => {
           if (!value) return true;
+          if (key === 'fechaDesde') return item.fecha && item.fecha >= value;
+          if (key === 'fechaHasta') return item.fecha && item.fecha <= value;
           return item[key] === value;
         });
       });
@@ -1495,8 +1497,26 @@ const App = () => {
                       className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
                     >
                       <option value="">Todas</option>
-                      {tags.finanzas.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                      {[...new Set([...tags.finanzas, ...data.finanzas.map(f => f.categoria).filter(Boolean)])].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha desde</label>
+                    <input
+                      type="date"
+                      value={filters.fechaDesde || ''}
+                      onChange={(e) => setFilters({ ...filters, fechaDesde: e.target.value || undefined })}
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha hasta</label>
+                    <input
+                      type="date"
+                      value={filters.fechaHasta || ''}
+                      onChange={(e) => setFilters({ ...filters, fechaHasta: e.target.value || undefined })}
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+                    />
                   </div>
                 </>
               )}
