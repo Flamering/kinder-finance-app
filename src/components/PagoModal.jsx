@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import SelectField from './SelectField';
 
 const PagoModal = ({ isOpen, onClose, record, onConfirm }) => {
@@ -59,11 +59,11 @@ const PagoModal = ({ isOpen, onClose, record, onConfirm }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={loading ? undefined : onClose} />
       <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-elevated p-8 border border-slate-200/50 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black text-[#74739E]">Registrar Pago</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg">
+          <button onClick={onClose} disabled={loading} className="p-2 hover:bg-slate-200 rounded-lg disabled:opacity-50">
             <X size={20} />
           </button>
         </div>
@@ -148,8 +148,9 @@ const PagoModal = ({ isOpen, onClose, record, onConfirm }) => {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 py-4 bg-green-600 text-white font-black rounded-xl shadow-lg shadow-green-600/40 active:scale-95 transition-all disabled:opacity-50"
+              className="flex-1 py-4 bg-green-600 text-white font-black rounded-xl shadow-lg shadow-green-600/40 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {loading && <Loader2 size={18} className="animate-spin" />}
               {loading ? 'PROCESANDO...' : 'CONFIRMAR PAGO'}
             </button>
           </div>
