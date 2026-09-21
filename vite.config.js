@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      selfDestroying: true,
       includeAssets: ['favicon.svg', 'icons.svg', 'pwa-icon.svg'],
       manifest: {
         name: 'Kinder Finance App',
@@ -16,8 +16,6 @@ export default defineConfig({
         theme_color: '#A7C7E7',
         background_color: '#F7F9FB',
         display: 'standalone',
-        scope: '/kinder-finance-app/',
-        start_url: '/kinder-finance-app/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -49,20 +47,6 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
             handler: 'CacheFirst',
             options: {
@@ -80,5 +64,5 @@ export default defineConfig({
       }
     })
   ],
-  base: '/kinder-finance-app/',
+  base: './',
 })
