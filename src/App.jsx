@@ -286,7 +286,7 @@ const App = () => {
   const [currentSection, setCurrentSection] = useState('home');
   const [isMobile, setIsMobile] = useState(false);
 
-  // Estados para datos de Supabase
+  // Estados para datos de la API
   const [data, setData] = useState({ alumnos: [], cxc: [], finanzas: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

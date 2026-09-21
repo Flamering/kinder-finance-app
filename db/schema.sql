@@ -153,6 +153,61 @@ CREATE TABLE IF NOT EXISTS kinder.maestros_salones (
 ALTER TABLE kinder.maestros_salones OWNER TO kinder_owner;
 
 -- =============================================
+-- CONSTRAINTS DE FIDELIDAD (master supabase-schema.sql).
+-- Idempotentes: cada DO block verifica pg_constraint.
+-- Fix wave 2026-09-21: FKs alumnos ON DELETE SET NULL,
+-- UNIQUE(maestro_id, salon_id), DEFAULT+CHECK rol.
+-- Datos validados limpios antes de aplicar
+-- (0 huérfanos, 0 duplicados, rol solo Principal/Asistente).
+-- =============================================
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_alumnos_tutor_id'
+  ) THEN
+    ALTER TABLE kinder.alumnos
+      ADD CONSTRAINT fk_alumnos_tutor_id
+      FOREIGN KEY (tutor_id) REFERENCES kinder.tutores(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_alumnos_salon_id'
+  ) THEN
+    ALTER TABLE kinder.alumnos
+      ADD CONSTRAINT fk_alumnos_salon_id
+      FOREIGN KEY (salon_id) REFERENCES kinder.salones(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_maestros_salones_maestro_salon'
+  ) THEN
+    ALTER TABLE kinder.maestros_salones
+      ADD CONSTRAINT uq_maestros_salones_maestro_salon
+      UNIQUE (maestro_id, salon_id);
+  END IF;
+END $$;
+
+-- DEFAULT idempotente (SET DEFAULT es re-ejecutable)
+ALTER TABLE kinder.maestros_salones ALTER COLUMN rol SET DEFAULT 'Principal';
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_maestros_salones_rol'
+  ) THEN
+    ALTER TABLE kinder.maestros_salones
+      ADD CONSTRAINT chk_maestros_salones_rol
+      CHECK (rol IN ('Principal', 'Asistente', 'Suplente'));
+  END IF;
+END $$;
+
+-- =============================================
 -- FUNCIÓN update_updated_at_column (idempotente)
 -- =============================================
 CREATE OR REPLACE FUNCTION kinder.update_updated_at_column()
