@@ -21,12 +21,17 @@ import {
   Calendar,
   Check,
   FileDown,
-  ReceiptText
+  ReceiptText,
+  Receipt
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
 import PagoModal from './components/PagoModal';
+import ComprobantesModal from './components/ComprobantesModal';
+import EventualPagoModal from './components/EventualPagoModal';
+import PagosEventualesModal from './components/PagosEventualesModal';
+import ComprobantePreview from './components/ComprobantePreview';
 import HomeDashboard from './components/HomeDashboard';
-import { fetchSectionData, createRecord, updateRecord, softDeleteRecord, createBulkRecords } from './lib/api';
+import { fetchSectionData, createRecord, updateRecord, softDeleteRecord, createBulkRecords, registrarPago } from './lib/api';
 import { exportCxcVencidosPDF } from './lib/pdfExport';
 
 // --- Constantes de Diseño ---
@@ -301,6 +306,15 @@ const App = () => {
   // Estados para modal de pago
   const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
   const [pagoRecord, setPagoRecord] = useState(null);
+  const [isComprobantesOpen, setIsComprobantesOpen] = useState(false);
+  const [comprobantesCuentaInicial, setComprobantesCuentaInicial] = useState('');
+  const [comprobantesTipo, setComprobantesTipo] = useState('Colegiatura');
+
+  // Estados para pagos eventuales
+  const [isEventualPagoOpen, setIsEventualPagoOpen] = useState(false);
+  const [isEventualesDetailOpen, setIsEventualesDetailOpen] = useState(false);
+  const [previewPago, setPreviewPago] = useState(null);
+  const [previewCuentas, setPreviewCuentas] = useState([]);
 
   // Estados para sistema de etiquetas
   const [tags, setTags] = useState({ alumnos: [], cxc: [], finanzas: [] });
@@ -435,7 +449,9 @@ const App = () => {
     })();
   }, [currentSection]);
 
-  const sectionData = data[currentSection] || [];
+  const sectionData = currentSection === 'cxc'
+    ? (data.cxc || []).filter((c) => c.tipo !== 'Eventual')
+    : data[currentSection] || [];
 
   // Función de Soft Delete
   const handleSoftDelete = async (itemId) => {
@@ -503,36 +519,22 @@ const App = () => {
   const handlePago = async ({ montoPago, fecha, metodoPago }) => {
     if (!pagoRecord) return;
     try {
-      const montoActual = parseFloat(pagoRecord.monto_pagado) || 0;
-      const montoTotal = parseFloat(pagoRecord.monto) || 0;
-      const nuevoMontoPagado = montoActual + montoPago;
-      const nuevoEstado = nuevoMontoPagado >= montoTotal ? 'Pagado' : 'Parcial';
-
-      const updatedCxc = await updateRecord('cxc', pagoRecord.id, {
-        monto_pagado: nuevoMontoPagado,
-        estado: nuevoEstado,
-      });
-
-      const newFinanza = await createRecord('finanzas', {
-        tipo: 'Ingreso',
-        categoria: 'Mensualidad',
+      const result = await registrarPago({
+        alumnoId: pagoRecord.alumno_id,
+        cxcId: pagoRecord.id,
         monto: montoPago,
         fecha,
-        metodo_pago: metodoPago,
-        estado: 'Completado',
-        descripcion: `Pago CxC - ${pagoRecord.concepto} - ${pagoRecord.alumno_nombre}`,
+        metodoPago,
+        categoria: pagoRecord.tipo === 'Eventual' ? 'Evento' : 'Mensualidad',
       });
-
       setData(prev => ({
         ...prev,
-        cxc: prev.cxc.map(item => item.id === pagoRecord.id ? updatedCxc : item),
-        finanzas: [newFinanza, ...prev.finanzas],
+        cxc: prev.cxc.map(item => item.id === pagoRecord.id ? result.cxc : item),
+        finanzas: [result.finanza, ...prev.finanzas],
       }));
-
       if (selectedItem?.id === pagoRecord.id) {
-        setSelectedItem(updatedCxc);
+        setSelectedItem(result.cxc);
       }
-
       setIsPagoModalOpen(false);
       setPagoRecord(null);
     } catch (err) {
@@ -918,7 +920,7 @@ const App = () => {
             <div className="space-y-3">
               {[
                 { id: 'alumnos', icon: Users, label: 'Alumnos', desc: `${data.alumnos.filter(a => a.estado === 'Activo').length} activos` },
-                { id: 'cxc', icon: DollarSign, label: 'Cuentas por Cobrar', desc: `${data.cxc.filter(c => c.estado === 'Pendiente' || c.estado === 'Vencido').length} pendientes` },
+                { id: 'cxc', icon: DollarSign, label: 'Cuentas por Cobrar', desc: `${data.cxc.filter(c => (c.estado === 'Pendiente' || c.estado === 'Vencido') && c.tipo !== 'Eventual').length} pendientes` },
                 { id: 'finanzas', icon: TrendingUp, label: 'Finanzas', desc: `${data.finanzas.filter(f => f.estado === 'Pendiente').length} pendientes` },
               ].map((section) => {
                 const Icon = section.icon;
@@ -1250,6 +1252,15 @@ const App = () => {
                     <DollarSign size={16} />
                   </button>
                 )}
+                {currentSection === 'cxc' && selectedItem.alumno_id && (
+                  <button
+                    onClick={() => { setComprobantesTipo('Colegiatura'); setIsComprobantesOpen(true); }}
+                    className="flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-xl hover:brightness-110 transition-all"
+                    title="Comprobantes de pago"
+                  >
+                    <Receipt size={16} />
+                  </button>
+                )}
                 <button
                   onClick={() => handleEdit(selectedItem)}
                   className="ml-auto flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-xl hover:brightness-110 transition-all"
@@ -1356,6 +1367,62 @@ const App = () => {
                       </div>
                       <p className="text-sm text-slate-500 mt-4">Estado: {selectedItem.estado}</p>
                     </div>
+                    {selectedItem.tipo !== 'Eventual' && (() => {
+                      const cuentasEventuales = data.cxc.filter((c) => c.alumno_id === selectedItem.alumno_id && c.tipo === 'Eventual');
+                      return (
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm md:col-span-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <h5 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Pagos Eventuales</h5>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setIsEventualPagoOpen(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white text-xs font-bold rounded-xl hover:brightness-110 transition-all"
+                              >
+                                <Plus size={14} />
+                                Nuevo pago eventual
+                              </button>
+                              <button
+                                onClick={() => setIsEventualesDetailOpen(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-[#5A7A9A] text-white text-xs font-bold rounded-xl hover:brightness-110 transition-all"
+                              >
+                                <Eye size={14} />
+                                Ver detalle
+                              </button>
+                            </div>
+                          </div>
+                          {cuentasEventuales.length === 0 ? (
+                            <p className="text-sm text-slate-500">Aún no hay pagos eventuales para este alumno.</p>
+                          ) : (
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="bg-slate-50 text-left">
+                                    <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Concepto</th>
+                                    <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                                    <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Monto</th>
+                                    <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {cuentasEventuales.map((c) => (
+                                    <tr key={c.id} className="border-t border-slate-100">
+                                      <td className="px-4 py-2 font-semibold text-slate-700">{c.concepto}</td>
+                                      <td className="px-4 py-2 text-slate-500 whitespace-nowrap">{c.fecha_vencimiento || c.fecha_emision || '—'}</td>
+                                      <td className="px-4 py-2 text-right font-bold text-slate-700">${parseFloat(c.monto || 0).toLocaleString()}</td>
+                                      <td className="px-4 py-2 text-center">
+                                        <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${getStatusStyles(c.estado, 'cxc')}`}>
+                                          {c.estado}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </>
                 ) : (
                   <>
@@ -1639,6 +1706,49 @@ const App = () => {
               onClose={() => { setIsPagoModalOpen(false); setPagoRecord(null); }}
               record={pagoRecord}
               onConfirm={handlePago}
+            />
+            <ComprobantesModal
+              isOpen={isComprobantesOpen}
+              onClose={() => { setIsComprobantesOpen(false); setComprobantesCuentaInicial(''); }}
+              alumno={selectedItem}
+              cuentas={data.cxc.filter(c => c.alumno_id === selectedItem?.alumno_id)}
+              tipoCuenta={comprobantesTipo}
+              cuentaInicial={comprobantesCuentaInicial}
+            />
+            <EventualPagoModal
+              isOpen={isEventualPagoOpen}
+              onClose={() => setIsEventualPagoOpen(false)}
+              alumno={selectedItem}
+              onCreated={(result) => {
+                setIsEventualPagoOpen(false);
+                const r = result.resultado;
+                setData((prev) => ({ ...prev, cxc: [r.cxc, ...prev.cxc], finanzas: [r.finanza, ...prev.finanzas] }));
+                setPreviewPago(r.pago);
+                setPreviewCuentas(data.cxc.filter((c) => c.alumno_id === selectedItem?.alumno_id));
+              }}
+            />
+            <PagosEventualesModal
+              isOpen={isEventualesDetailOpen}
+              onClose={() => setIsEventualesDetailOpen(false)}
+              alumno={selectedItem}
+              cuentasEventuales={data.cxc.filter((c) => c.alumno_id === selectedItem?.alumno_id && c.tipo === 'Eventual')}
+              onVerComprobantes={(cuenta) => {
+                setIsEventualesDetailOpen(false);
+                setComprobantesTipo('Eventual');
+                setComprobantesCuentaInicial(cuenta.id);
+                setIsComprobantesOpen(true);
+              }}
+              onRegistrarPago={(cuenta) => {
+                setIsEventualesDetailOpen(false);
+                setPagoRecord(cuenta);
+                setIsPagoModalOpen(true);
+              }}
+            />
+            <ComprobantePreview
+              isOpen={!!previewPago}
+              onClose={() => setPreviewPago(null)}
+              pago={previewPago}
+              cuentas={previewCuentas}
             />
           </>
         );

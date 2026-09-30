@@ -1,3 +1,6 @@
+import { buildComprobanteDocDefinition, buildComprobanteModel } from './comprobanteModel';
+import logoUrl from '../assets/logo-ausubel-25.png';
+
 export async function exportCxcVencidosPDF(records) {
   const vencidos = records.filter((r) => r.estado === 'Vencido');
 
@@ -97,4 +100,27 @@ export async function exportCxcVencidosPDF(records) {
   };
 
   pdfMake.createPdf(docDefinition).download('cuentas_por_cobrar_vencidas.pdf');
+}
+
+export async function exportComprobantePagoPDF(pago, cuenta, { action = 'download' } = {}) {
+  const pdfMake = (await import('pdfmake/build/pdfmake')).default;
+  const pdfFonts = await import('pdfmake/build/vfs_fonts');
+  pdfMake.vfs = pdfFonts.vfs;
+
+  const modelo = buildComprobanteModel(pago, cuenta);
+  const logoDataUri = await fetch(logoUrl).then((r) => r.blob()).then(
+    (b) => new Promise((resolve) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.readAsDataURL(b);
+    }),
+  );
+  const docDefinition = buildComprobanteDocDefinition(modelo, logoDataUri);
+
+  const filename = `comprobante_${pago.folio}.pdf`;
+  if (action === 'print') {
+    pdfMake.createPdf(docDefinition).open();
+  } else {
+    pdfMake.createPdf(docDefinition).download(filename);
+  }
 }
