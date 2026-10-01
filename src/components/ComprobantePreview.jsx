@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Download, Printer } from 'lucide-react';
+import { X, Download, Printer, Share2, Loader2 } from 'lucide-react';
 import logo25Url from '../assets/logo-ausubel-25.png';
 import { COMPROBANTE_THEME, buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, compartirComprobantePagoPDF, puedeCompartirComprobante } from '../lib/pdfExport';
 
 const T = COMPROBANTE_THEME;
 
@@ -10,6 +10,8 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
   const paperRef = useRef(null);
   const metodoRowRef = useRef(null);
   const [logoTop, setLogoTop] = useState(null);
+  const [compartiendo, setCompartiendo] = useState(false);
+  const admiteCompartir = puedeCompartirComprobante();
 
   useEffect(() => {
     const measure = () => {
@@ -33,6 +35,20 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
       await exportComprobantePagoPDF(pago, cuenta, { action });
     } catch (err) {
       alert(err.message || 'Error al generar el comprobante');
+    }
+  };
+
+  const handleCompartir = async () => {
+    setCompartiendo(true);
+    try {
+      const res = await compartirComprobantePagoPDF(pago, cuenta);
+      if (res === 'downloaded') {
+        alert('Tu navegador no permite compartir archivos; se descargó el PDF.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error al compartir el comprobante');
+    } finally {
+      setCompartiendo(false);
     }
   };
 
@@ -70,6 +86,16 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
               <Printer size={16} />
               Imprimir
             </button>
+            {admiteCompartir && (
+              <button
+                onClick={handleCompartir}
+                disabled={compartiendo}
+                className="flex items-center gap-2 px-4 py-2 bg-[#A7C7E7] text-slate-800 text-sm font-bold rounded-xl hover:brightness-105 disabled:opacity-50"
+              >
+                {compartiendo ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                Compartir
+              </button>
+            )}
             <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg">
               <X size={20} />
             </button>

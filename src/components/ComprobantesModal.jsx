@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Download, Printer, Receipt, Eye } from 'lucide-react';
+import { X, Loader2, Download, Printer, Receipt, Eye, Share2 } from 'lucide-react';
 import { fetchPagosByAlumno } from '../lib/api';
-import { exportComprobantePagoPDF } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, compartirComprobantePagoPDF, puedeCompartirComprobante } from '../lib/pdfExport';
 import ComprobantePreview from './ComprobantePreview';
 
 const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Colegiatura', cuentaInicial = '' }) => {
@@ -48,6 +48,11 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   const handlePdf = async (pago, action) => {
     try {
       const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
+      if (action === 'share') {
+        const res = await compartirComprobantePagoPDF(pago, cuenta);
+        if (res === 'downloaded') alert('Tu navegador no permite compartir archivos; se descargó el PDF.');
+        return;
+      }
       await exportComprobantePagoPDF(pago, cuenta, { action });
     } catch (err) {
       alert(err.message || 'Error al generar el comprobante');
@@ -136,6 +141,15 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
                   >
                     <Eye size={16} />
                   </button>
+                  {puedeCompartirComprobante() && (
+                    <button
+                      onClick={() => handlePdf(pago, 'share')}
+                      className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                      title="Compartir"
+                    >
+                      <Share2 size={16} />
+                    </button>
+                  )}
                   <button
                     onClick={() => handlePdf(pago, 'download')}
                     className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"

@@ -102,25 +102,70 @@ export async function exportCxcVencidosPDF(records) {
   pdfMake.createPdf(docDefinition).download('cuentas_por_cobrar_vencidas.pdf');
 }
 
-export async function exportComprobantePagoPDF(pago, cuenta, { action = 'download' } = {}) {
-  const pdfMake = (await import('pdfmake/build/pdfmake')).default;
-  const pdfFonts = await import('pdfmake/build/vfs_fonts');
-  pdfMake.vfs = pdfFonts.vfs;
-
-  const modelo = buildComprobanteModel(pago, cuenta);
-  const logoDataUri = await fetch(logoUrl).then((r) => r.blob()).then(
+async function obtenerLogoDataUri() {
+  return fetch(logoUrl).then((r) => r.blob()).then(
     (b) => new Promise((resolve) => {
       const fr = new FileReader();
       fr.onload = () => resolve(fr.result);
       fr.readAsDataURL(b);
     }),
   );
-  const docDefinition = buildComprobanteDocDefinition(modelo, logoDataUri);
+}
 
-  const filename = `comprobante_${pago.folio}.pdf`;
+// Returns { pdf, filename, modelo } — pdf is the pdfmake pdf object (browser build)
+async function crearComprobantePDF(pago, cuenta) {
+  const pdfMake = (await import('pdfmake/build/pdfmake')).default;
+  const pdfFonts = await import('pdfmake/build/vfs_fonts');
+  pdfMake.vfs = pdfFonts.vfs;
+  const modelo = buildComprobanteModel(pago, cuenta);
+  const logoDataUri = await obtenerLogoDataUri();
+  const docDefinition = buildComprobanteDocDefinition(modelo, logoDataUri);
+  return { pdf: pdfMake.createPdf(docDefinition), filename: `comprobante_${pago.folio}.pdf`, modelo };
+}
+
+export async function exportComprobantePagoPDF(pago, cuenta, { action = 'download' } = {}) {
+  const { pdf, filename } = await crearComprobantePDF(pago, cuenta);
+
   if (action === 'print') {
-    pdfMake.createPdf(docDefinition).open();
+    pdf.open();
   } else {
-    pdfMake.createPdf(docDefinition).download(filename);
+    pdf.download(filename);
+  }
+}
+
+// Devuelve true si el navegador puede compartir archivos.
+export function puedeCompartirComprobante() {
+  return typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+}
+
+// Comparte el PDF por la hoja nativa del dispositivo.
+// Retorna 'shared' | 'cancelled' | 'unsupported' | 'downloaded'.
+export async function compartirComprobantePagoPDF(pago, cuenta) {
+  const { pdf, filename, modelo } = await crearComprobantePDF(pago, cuenta);
+
+  if (!puedeCompartirComprobante()) {
+    // Fallback: descargar y avisar
+    pdf.download(filename);
+    return 'downloaded';
+  }
+
+  const blob = await new Promise((resolve) => pdf.getBlob((b) => resolve(b)));
+  const file = new File([blob], filename, { type: 'application/pdf' });
+
+  if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
+    pdf.download(filename);
+    return 'downloaded';
+  }
+
+  try {
+    await navigator.share({
+      files: [file],
+      title: `Comprobante ${pago.folio || ''}`.trim(),
+      text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
+    });
+    return 'shared';
+  } catch (err) {
+    if (err && err.name === 'AbortError') return 'cancelled'; // el usuario cerró la hoja
+    throw err;
   }
 }
