@@ -118,16 +118,19 @@ function obtenerLogoDataUri() {
 
 // Returns { pdf, filename, modelo } — pdf is the pdfmake pdf object (browser build)
 async function crearComprobantePDF(pago, cuenta) {
+  console.log('[pdf] generar docDefinition', { folio: pago?.folio });
   const pdfMake = (await import('pdfmake/build/pdfmake')).default;
   const pdfFonts = await import('pdfmake/build/vfs_fonts');
   pdfMake.vfs = pdfFonts.vfs;
   const modelo = buildComprobanteModel(pago, cuenta);
   const logoDataUri = await obtenerLogoDataUri();
+  console.log('[pdf] logo cargado', { bytes: typeof logoDataUri === 'string' ? logoDataUri.length : 0 });
   const docDefinition = buildComprobanteDocDefinition(modelo, logoDataUri);
   return { pdf: pdfMake.createPdf(docDefinition), filename: `comprobante_${pago.folio}.pdf`, modelo };
 }
 
 export async function exportComprobantePagoPDF(pago, cuenta, { action = 'download' } = {}) {
+  console.log('[pdf] export', { action, folio: pago?.folio });
   const { pdf, filename } = await crearComprobantePDF(pago, cuenta);
 
   if (action === 'print') {
@@ -135,6 +138,7 @@ export async function exportComprobantePagoPDF(pago, cuenta, { action = 'downloa
   } else {
     await pdf.download(filename);
   }
+  console.log('[pdf] export listo', { action });
 }
 
 // Devuelve true si el navegador puede compartir archivos.
@@ -146,8 +150,11 @@ export function puedeCompartirComprobante() {
 // Devuelve { blob, filename, modelo }. El File se crea de forma perezosa
 // SOLO al compartir, para no mantener dos copias en memoria.
 export async function crearComprobanteBlob(pago, cuenta) {
+  const t0 = performance.now();
+  console.log('[pdf] generando blob', { folio: pago?.folio });
   const { pdf, filename, modelo } = await crearComprobantePDF(pago, cuenta);
   const blob = await pdf.getBlob();
+  console.log('[pdf] blob listo', { folio: pago?.folio, bytes: blob?.size, ms: Math.round(performance.now() - t0) });
   return { blob, filename, modelo };
 }
 
@@ -171,8 +178,10 @@ export async function compartirComprobanteBlob(blob, filename, { title, text } =
 // (abre el diálogo de impresión directamente). Libera el object-URL y el iframe
 // en cuanto print() retorna o falla. Retorna 'printed' | 'failed'.
 export function imprimirComprobanteBlob(blob) {
+  console.log('[imprimir] inicio', { bytes: blob?.size, type: blob?.type });
   return new Promise((resolve) => {
     const url = URL.createObjectURL(blob);
+    console.log('[imprimir] objectURL creada');
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
     iframe.style.position = 'fixed';
@@ -187,27 +196,32 @@ export function imprimirComprobanteBlob(blob) {
     const terminar = (res) => {
       if (resuelto) return;
       resuelto = true;
+      console.log('[imprimir] fin →', res, '(URL revocada, iframe removido)');
       URL.revokeObjectURL(url);
       if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
       resolve(res);
     };
 
     iframe.onload = () => {
+      console.log('[imprimir] iframe onload — visor listo');
       try {
         const win = iframe.contentWindow;
-        if (!win || typeof win.print !== 'function') { terminar('failed'); return; }
+        if (!win || typeof win.print !== 'function') { console.log('[imprimir] contentWindow.print NO disponible'); terminar('failed'); return; }
         win.focus();
+        console.log('[imprimir] llamando contentWindow.print()');
         win.print();
+        console.log('[imprimir] print() retornó (diálogo cerrado)');
         terminar('printed');
-      } catch {
+      } catch (e) {
+        console.log('[imprimir] excepción en print()', e);
         terminar('failed');
       }
     };
-    iframe.onerror = () => terminar('failed');
+    iframe.onerror = (e) => { console.log('[imprimir] iframe onerror', e); terminar('failed'); };
 
     iframe.src = url;
     document.body.appendChild(iframe);
-    setTimeout(() => terminar('failed'), 8000);
+    setTimeout(() => { console.log('[imprimir] timeout de seguridad 8s'); terminar('failed'); }, 8000);
   });
 }
 
@@ -227,10 +241,12 @@ export function descargarComprobanteBlob(blob, filename) {
 // window.open debe ejecutarse pronto tras el gesto para no ser bloqueado.
 // Retorna 'opened' | 'blocked'.
 export function abrirComprobanteEnPestana(blob) {
+  console.log('[imprimir] fallback pestaña — intentando window.open', { bytes: blob?.size });
   const url = URL.createObjectURL(blob);
   const win = window.open(url, '_blank');
+  console.log('[imprimir] window.open →', win ? 'pestaña abierta' : 'BLOQUEADA por el navegador');
   if (!win) { URL.revokeObjectURL(url); return 'blocked'; }
-  win.addEventListener('load', () => setTimeout(() => URL.revokeObjectURL(url), 2000), { once: true });
+  win.addEventListener('load', () => { console.log('[imprimir] fallback pestaña — URL revocada'); setTimeout(() => URL.revokeObjectURL(url), 2000); }, { once: true });
   setTimeout(() => URL.revokeObjectURL(url), 30000);
   return 'opened';
 }

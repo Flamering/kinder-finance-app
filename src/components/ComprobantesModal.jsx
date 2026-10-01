@@ -46,12 +46,14 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
     (async () => {
       for (const p of pagos) {
         if (cancelado) return;
+        console.log('[comprobantes] pre-generando PDF', { folio: p.folio });
         setPreparandoListo((prev) => ({ ...prev, [p.id]: true }));
         try {
           const cuenta = (cuentas || []).find((c) => c.id === p.cxc_id);
           const listo = await crearComprobanteBlob(p, cuenta);
+          console.log('[comprobantes] PDF listo', { folio: p.folio, bytes: listo?.blob?.size });
           if (!cancelado) setComprobantesListos((prev) => ({ ...prev, [p.id]: listo }));
-        } catch { /* ignore: el botón hará fallback */ }
+        } catch (err) { console.log('[comprobantes] fallo la pre-generación', { folio: p.folio }, err); }
         finally { if (!cancelado) setPreparandoListo((prev) => ({ ...prev, [p.id]: false })); }
       }
     })();
@@ -89,15 +91,19 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   };
 
   const handleImprimirRow = async (pago) => {
+    console.log('[comprobantes][imprimir] click', { folio: pago?.folio, tieneBlob: !!comprobantesListos[pago.id] });
     try {
       const listo = comprobantesListos[pago.id];
       const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
       if (!listo) { await exportComprobantePagoPDF(pago, cuenta, { action: 'print' }); return; }
       const res = await imprimirComprobanteBlob(listo.blob);
+      console.log('[comprobantes][imprimir] resultado iframe:', res);
       if (res === 'printed') return;
       const fb = abrirComprobanteEnPestana(listo.blob);
+      console.log('[comprobantes][imprimir] resultado fallback pestaña:', fb);
       if (fb === 'blocked') alert('El navegador bloqueó la ventana emergente. Usa Descargar PDF o permite las ventanas emergentes.');
     } catch (err) {
+      console.log('[comprobantes][imprimir] error', err);
       alert(err.message || 'Error al imprimir el comprobante');
     }
   };

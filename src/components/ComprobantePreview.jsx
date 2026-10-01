@@ -20,9 +20,10 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
     setPreparando(true);
     setComprobante(null);
     const cuentaPre = (cuentas || []).find((c) => c.id === pago.cxc_id) || null;
+    console.log('[preview] pre-generando PDF para imprimir/compartir…', { folio: pago?.folio });
     crearComprobanteBlob(pago, cuentaPre)
-      .then((res) => { if (!cancelado) setComprobante(res); })
-      .catch(() => { if (!cancelado) setComprobante(null); })
+      .then((res) => { console.log('[preview] PDF listo', { folio: pago?.folio, bytes: res?.blob?.size }); if (!cancelado) setComprobante(res); })
+      .catch((err) => { console.log('[preview] fallo la pre-generación', err); if (!cancelado) setComprobante(null); })
       .finally(() => { if (!cancelado) setPreparando(false); });
     return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,13 +55,17 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
   };
 
   const handleImprimir = async () => {
+    console.log('[preview][imprimir] click', { tieneBlob: !!comprobante, bytes: comprobante?.blob?.size });
     try {
-      if (!comprobante) { await handlePdf('print'); return; }
+      if (!comprobante) { console.log('[preview][imprimir] sin blob → export print'); await handlePdf('print'); return; }
       const res = await imprimirComprobanteBlob(comprobante.blob);
+      console.log('[preview][imprimir] resultado iframe:', res);
       if (res === 'printed') return;
       const fb = abrirComprobanteEnPestana(comprobante.blob);
+      console.log('[preview][imprimir] resultado fallback pestaña:', fb);
       if (fb === 'blocked') alert('El navegador bloqueó la ventana emergente. Usa Descargar PDF o permite las ventanas emergentes.');
     } catch (err) {
+      console.log('[preview][imprimir] error', err);
       alert(err.message || 'Error al imprimir el comprobante');
     }
   };
