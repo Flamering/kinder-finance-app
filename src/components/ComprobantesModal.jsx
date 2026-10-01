@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Download, Printer, Receipt, Eye, Share2 } from 'lucide-react';
 import { fetchPagosByAlumno } from '../lib/api';
 import { buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, crearComprobanteBlob, abrirComprobanteParaImprimir, imprimirComprobantePagoPDF, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteBlob, imprimirComprobanteBlob, abrirComprobanteEnPestana, descargarComprobanteBlob, compartirComprobanteBlob, puedeCompartirComprobante } from '../lib/pdfExport';
 import ComprobantePreview from './ComprobantePreview';
 
 const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Colegiatura', cuentaInicial = '' }) => {
@@ -33,6 +33,9 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
       setFiltroCuenta(cuentaInicial || '');
       setPagos([]);
       loadPagos();
+    } else {
+      setComprobantesListos({});
+      setPreparandoListo({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -76,17 +79,24 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
     }
   };
 
+  const handleDescargarRow = async (pago) => {
+    const listo = comprobantesListos[pago.id];
+    if (listo) {
+      descargarComprobanteBlob(listo.blob, listo.filename);
+      return;
+    }
+    await handlePdf(pago, 'download');
+  };
+
   const handleImprimirRow = async (pago) => {
     try {
       const listo = comprobantesListos[pago.id];
-      if (listo) {
-        const res = abrirComprobanteParaImprimir(listo.blob);
-        if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
-        return;
-      }
       const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
-      const res = await imprimirComprobantePagoPDF(pago, cuenta);
-      if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
+      if (!listo) { await exportComprobantePagoPDF(pago, cuenta, { action: 'print' }); return; }
+      const res = await imprimirComprobanteBlob(listo.blob);
+      if (res === 'printed') return;
+      const fb = abrirComprobanteEnPestana(listo.blob);
+      if (fb === 'blocked') alert('El navegador bloqueó la ventana emergente. Usa Descargar PDF o permite las ventanas emergentes.');
     } catch (err) {
       alert(err.message || 'Error al imprimir el comprobante');
     }
@@ -94,8 +104,7 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
 
   const handleCompartirRow = async (pago) => {
     const listo = comprobantesListos[pago.id];
-    const file = listo?.file;
-    if (!file) {
+    if (!listo) {
       try {
         const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
         await exportComprobantePagoPDF(pago, cuenta, { action: 'download' });
@@ -107,12 +116,12 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
     try {
       const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
       const modelo = buildComprobanteModel(pago, cuenta);
-      const res = await compartirComprobanteFile(file, {
+      const res = await compartirComprobanteBlob(listo.blob, listo.filename, {
         title: `Comprobante ${pago.folio || ''}`.trim(),
         text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
       });
       if (res === 'unsupported') {
-        await exportComprobantePagoPDF(pago, cuenta, { action: 'download' });
+        descargarComprobanteBlob(listo.blob, listo.filename);
         alert('Tu navegador no permite compartir archivos; se descargó el PDF.');
       }
     } catch (err) {
@@ -213,7 +222,7 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
                     </button>
                   )}
                   <button
-                    onClick={() => handlePdf(pago, 'download')}
+                    onClick={() => handleDescargarRow(pago)}
                     className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
                     title="Descargar PDF"
                   >

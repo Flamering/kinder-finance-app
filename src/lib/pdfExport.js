@@ -142,52 +142,21 @@ export function puedeCompartirComprobante() {
   return typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 }
 
-// Genera el File listo para compartir. Asíncrono: NO requiere gesto de usuario.
-export async function crearComprobanteFile(pago, cuenta) {
-  const { file, filename, modelo } = await crearComprobanteBlob(pago, cuenta);
-  return { file, filename, modelo };
-}
-
-// Genera blob + file + filename del comprobante (asíncrono; NO requiere gesto).
+// Genera el blob del comprobante (asíncrono; sin gesto de usuario).
+// Devuelve { blob, filename, modelo }. El File se crea de forma perezosa
+// SOLO al compartir, para no mantener dos copias en memoria.
 export async function crearComprobanteBlob(pago, cuenta) {
   const { pdf, filename, modelo } = await crearComprobantePDF(pago, cuenta);
   const blob = await pdf.getBlob();
-  return { blob, file: new File([blob], filename, { type: 'application/pdf' }), filename, modelo };
+  return { blob, filename, modelo };
 }
 
-// Abre un PDF ya generado en una pestaña nueva. DEBE llamarse dentro del click.
-// Retorna 'opened' | 'blocked'.
-export function abrirComprobanteParaImprimir(blob) {
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url, '_blank');
-  if (!win) { URL.revokeObjectURL(url); return 'blocked'; }
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-  return 'opened';
-}
-
-// Fallback sin pre-generación: abre la pestaña de forma SÍNCRONA dentro del click
-// y la navega al PDF cuando está listo (así el bloqueador no la corta).
-// Retorna 'opened' | 'blocked'.
-export async function imprimirComprobantePagoPDF(pago, cuenta) {
-  const win = window.open('', '_blank');
-  if (!win) return 'blocked';
-  try {
-    const { blob } = await crearComprobanteBlob(pago, cuenta);
-    const url = URL.createObjectURL(blob);
-    win.location.href = url;
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    return 'opened';
-  } catch (err) {
-    try { win.close(); } catch { /* noop */ }
-    throw err;
-  }
-}
-
-// Comparte un File YA generado. DEBE llamarse dentro del handler del click
-// (la Web Share API exige activación transitoria del usuario).
-// Retorna 'shared' | 'cancelled' | 'unsupported'.
-export async function compartirComprobanteFile(file, { title, text } = {}) {
+// Comparte un blob YA generado. DEBE llamarse dentro del click: el File se
+// crea de forma síncrona (preserva la activación) y navigator.share se llama
+// inmediatamente. Retorna 'shared' | 'cancelled' | 'unsupported'.
+export async function compartirComprobanteBlob(blob, filename, { title, text } = {}) {
   if (!puedeCompartirComprobante()) return 'unsupported';
+  const file = new File([blob], filename, { type: 'application/pdf' });
   if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) return 'unsupported';
   try {
     await navigator.share({ files: [file], title, text });
@@ -198,16 +167,70 @@ export async function compartirComprobanteFile(file, { title, text } = {}) {
   }
 }
 
-// Comparte el PDF por la hoja nativa del dispositivo.
-// Retorna 'shared' | 'cancelled' | 'downloaded'.
-// NOTA: puede perder la activación transitoria en navegadores estrictos —
-// los componentes deben preferir crearComprobanteFile + compartirComprobanteFile.
-export async function compartirComprobantePagoPDF(pago, cuenta) {
-  const { file, modelo } = await crearComprobanteFile(pago, cuenta);
-  const res = await compartirComprobanteFile(file, {
-    title: `Comprobante ${pago.folio || ''}`.trim(),
-    text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
+// Imprime un blob PDF SIN abrir pestaña: iframe oculto + contentWindow.print()
+// (abre el diálogo de impresión directamente). Libera el object-URL y el iframe
+// en cuanto print() retorna o falla. Retorna 'printed' | 'failed'.
+export function imprimirComprobanteBlob(blob) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.opacity = '0';
+    iframe.style.border = '0';
+
+    let resuelto = false;
+    const terminar = (res) => {
+      if (resuelto) return;
+      resuelto = true;
+      URL.revokeObjectURL(url);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      resolve(res);
+    };
+
+    iframe.onload = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (!win || typeof win.print !== 'function') { terminar('failed'); return; }
+        win.focus();
+        win.print();
+        terminar('printed');
+      } catch {
+        terminar('failed');
+      }
+    };
+    iframe.onerror = () => terminar('failed');
+
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    setTimeout(() => terminar('failed'), 8000);
   });
-  if (res === 'unsupported') { await exportComprobantePagoPDF(pago, cuenta, { action: 'download' }); return 'downloaded'; }
-  return res;
+}
+
+// Descarga un blob ya generado (no requiere gesto). Libera la URL al terminar.
+export function descargarComprobanteBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+// Fallback: abre el PDF en una pestaña nueva (auto-print vía visor).
+// window.open debe ejecutarse pronto tras el gesto para no ser bloqueado.
+// Retorna 'opened' | 'blocked'.
+export function abrirComprobanteEnPestana(blob) {
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) { URL.revokeObjectURL(url); return 'blocked'; }
+  win.addEventListener('load', () => setTimeout(() => URL.revokeObjectURL(url), 2000), { once: true });
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return 'opened';
 }

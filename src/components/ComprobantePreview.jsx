@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Download, Printer, Share2, Loader2 } from 'lucide-react';
 import logo25Url from '../assets/logo-ausubel-25.png';
 import { COMPROBANTE_THEME, buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, crearComprobanteBlob, abrirComprobanteParaImprimir, imprimirComprobantePagoPDF, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteBlob, imprimirComprobanteBlob, abrirComprobanteEnPestana, descargarComprobanteBlob, compartirComprobanteBlob, puedeCompartirComprobante } from '../lib/pdfExport';
 
 const T = COMPROBANTE_THEME;
 
@@ -55,15 +55,25 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
 
   const handleImprimir = async () => {
     try {
-      if (comprobante) {
-        const res = abrirComprobanteParaImprimir(comprobante.blob);
-        if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
-        return;
-      }
-      const res = await imprimirComprobantePagoPDF(pago, cuenta);
-      if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
+      if (!comprobante) { await handlePdf('print'); return; }
+      const res = await imprimirComprobanteBlob(comprobante.blob);
+      if (res === 'printed') return;
+      const fb = abrirComprobanteEnPestana(comprobante.blob);
+      if (fb === 'blocked') alert('El navegador bloqueó la ventana emergente. Usa Descargar PDF o permite las ventanas emergentes.');
     } catch (err) {
       alert(err.message || 'Error al imprimir el comprobante');
+    }
+  };
+
+  const handleDescargar = async () => {
+    if (comprobante) {
+      descargarComprobanteBlob(comprobante.blob, comprobante.filename);
+      return;
+    }
+    try {
+      await exportComprobantePagoPDF(pago, cuenta, { action: 'download' });
+    } catch (err) {
+      alert(err.message || 'Error al generar el comprobante');
     }
   };
 
@@ -74,11 +84,11 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
       return;
     }
     try {
-      const res = await compartirComprobanteFile(comprobante.file, {
+      const res = await compartirComprobanteBlob(comprobante.blob, comprobante.filename, {
         title: `Comprobante ${pago.folio || ''}`.trim(),
         text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
       });
-      if (res === 'unsupported') { await exportComprobantePagoPDF(pago, cuenta, { action: 'download' }); alert('Tu navegador no permite compartir archivos; se descargó el PDF.'); }
+      if (res === 'unsupported') { descargarComprobanteBlob(comprobante.blob, comprobante.filename); alert('Tu navegador no permite compartir archivos; se descargó el PDF.'); }
     } catch (err) {
       alert(err.message || 'Error al compartir el comprobante');
     }
@@ -105,7 +115,7 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
           <h3 className="text-lg font-bold text-slate-800">Vista previa del comprobante</h3>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => handlePdf('download')}
+              onClick={handleDescargar}
               className="flex items-center gap-2 px-4 py-2 bg-[#5A7A9A] text-white text-sm font-bold rounded-xl hover:brightness-110"
             >
               <Download size={16} />
