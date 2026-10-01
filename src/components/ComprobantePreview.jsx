@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Download, Printer, Share2, Loader2 } from 'lucide-react';
 import logo25Url from '../assets/logo-ausubel-25.png';
 import { COMPROBANTE_THEME, buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, crearComprobanteBlob, imprimirComprobanteBlob, abrirComprobanteEnPestana, descargarComprobanteBlob, compartirComprobanteBlob, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteBlob, imprimirComprobanteHTML, descargarComprobanteBlob, compartirComprobanteBlob, puedeCompartirComprobante } from '../lib/pdfExport';
 
 const T = COMPROBANTE_THEME;
 
@@ -46,24 +46,11 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
   const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id) || null;
   const modelo = buildComprobanteModel(pago, cuenta);
 
-  const handlePdf = async (action) => {
-    try {
-      await exportComprobantePagoPDF(pago, cuenta, { action });
-    } catch (err) {
-      alert(err.message || 'Error al generar el comprobante');
-    }
-  };
-
   const handleImprimir = async () => {
-    console.log('[preview][imprimir] click', { tieneBlob: !!comprobante, bytes: comprobante?.blob?.size });
+    console.log('[preview][imprimir] click (HTML)');
     try {
-      if (!comprobante) { console.log('[preview][imprimir] sin blob → export print'); await handlePdf('print'); return; }
-      const res = await imprimirComprobanteBlob(comprobante.blob);
-      console.log('[preview][imprimir] resultado iframe:', res);
-      if (res === 'printed') return;
-      const fb = abrirComprobanteEnPestana(comprobante.blob);
-      console.log('[preview][imprimir] resultado fallback pestaña:', fb);
-      if (fb === 'blocked') alert('El navegador bloqueó la ventana emergente. Usa Descargar PDF o permite las ventanas emergentes.');
+      const res = await imprimirComprobanteHTML(pago, cuenta);
+      console.log('[preview][imprimir] resultado:', res);
     } catch (err) {
       console.log('[preview][imprimir] error', err);
       alert(err.message || 'Error al imprimir el comprobante');
@@ -128,10 +115,9 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
             </button>
             <button
               onClick={handleImprimir}
-              disabled={preparando}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300"
             >
-              {preparando ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+              <Printer size={16} />
               Imprimir
             </button>
             {admiteCompartir && (

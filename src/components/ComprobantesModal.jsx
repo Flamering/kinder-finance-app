@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Download, Printer, Receipt, Eye, Share2 } from 'lucide-react';
 import { fetchPagosByAlumno } from '../lib/api';
 import { buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, crearComprobanteBlob, imprimirComprobanteBlob, abrirComprobanteEnPestana, descargarComprobanteBlob, compartirComprobanteBlob, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteBlob, imprimirComprobanteHTML, descargarComprobanteBlob, compartirComprobanteBlob, puedeCompartirComprobante } from '../lib/pdfExport';
 import ComprobantePreview from './ComprobantePreview';
 
 const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Colegiatura', cuentaInicial = '' }) => {
@@ -91,17 +91,11 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   };
 
   const handleImprimirRow = async (pago) => {
-    console.log('[comprobantes][imprimir] click', { folio: pago?.folio, tieneBlob: !!comprobantesListos[pago.id] });
+    console.log('[comprobantes][imprimir] click (HTML)', { folio: pago?.folio });
     try {
-      const listo = comprobantesListos[pago.id];
       const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
-      if (!listo) { await exportComprobantePagoPDF(pago, cuenta, { action: 'print' }); return; }
-      const res = await imprimirComprobanteBlob(listo.blob);
-      console.log('[comprobantes][imprimir] resultado iframe:', res);
-      if (res === 'printed') return;
-      const fb = abrirComprobanteEnPestana(listo.blob);
-      console.log('[comprobantes][imprimir] resultado fallback pestaña:', fb);
-      if (fb === 'blocked') alert('El navegador bloqueó la ventana emergente. Usa Descargar PDF o permite las ventanas emergentes.');
+      const res = await imprimirComprobanteHTML(pago, cuenta);
+      console.log('[comprobantes][imprimir] resultado:', res);
     } catch (err) {
       console.log('[comprobantes][imprimir] error', err);
       alert(err.message || 'Error al imprimir el comprobante');
@@ -236,11 +230,10 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
                   </button>
                   <button
                     onClick={() => handleImprimirRow(pago)}
-                    disabled={!!preparandoListo[pago.id]}
-                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
                     title="Imprimir"
                   >
-                    {preparandoListo[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+                    <Printer size={16} />
                   </button>
                 </div>
               </div>

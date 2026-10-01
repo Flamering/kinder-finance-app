@@ -1,4 +1,4 @@
-import { buildComprobanteDocDefinition, buildComprobanteModel } from './comprobanteModel';
+import { buildComprobanteDocDefinition, buildComprobanteHTML, buildComprobanteModel } from './comprobanteModel';
 import logoUrl from '../assets/logo-ausubel-25.png';
 
 export async function exportCxcVencidosPDF(records) {
@@ -132,12 +132,20 @@ function urlDesdeError(err) {
   return m ? m[1] : null;
 }
 
+const TIMEOUT_IMPORT_MS = 15000; // un import colgado no debe colgar la UI para siempre
+
 async function importarChunk(loader, etiqueta) {
   let ultimo = null;
   for (let intento = 1; intento <= 3; intento++) {
     try {
       console.log(`[pdf] importando ${etiqueta} (intento ${intento}/3)`);
-      return await loader();
+      return await Promise.race([
+        loader(),
+        new Promise((_, rej) => setTimeout(
+          () => rej(new Error(`timeout importando ${etiqueta} (${TIMEOUT_IMPORT_MS}ms)`)),
+          TIMEOUT_IMPORT_MS,
+        )),
+      ]);
     } catch (err) {
       ultimo = err;
       console.log(`[pdf] import ${etiqueta} intento ${intento} FALLÓ`, err);
@@ -228,6 +236,46 @@ export async function compartirComprobanteBlob(blob, filename, { title, text } =
   } catch (err) {
     if (err && err.name === 'AbortError') return 'cancelled';
     throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Impresión FIABLE: imprime el HTML del comprobante en un iframe fuera de
+// pantalla. Imprimir un PDF dentro de un iframe NO abre el diálogo en
+// Chromium; el HTML sí. Además NO depende de pdfmake, así que la impresión
+// funciona aunque la importación del PDF falle. Sin pestaña nueva.
+// ---------------------------------------------------------------------------
+export async function imprimirComprobanteHTML(pago, cuenta) {
+  console.log('[imprimir] HTML — inicio', { folio: pago?.folio });
+  const modelo = buildComprobanteModel(pago, cuenta);
+  const logoDataUri = await obtenerLogoDataUri();
+  const cuerpo = buildComprobanteHTML(modelo, logoDataUri);
+  // Copiar las hojas de estilo del documento padre (traen las @font-face de Roboto).
+  const estilos = [...document.querySelectorAll('link[rel="stylesheet"]')]
+    .map((l) => l.href).filter(Boolean)
+    .map((href) => `<link rel="stylesheet" href="${href}">`).join('');
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:816px;height:1056px;border:0;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Comprobante ${pago?.folio || ''}</title>${estilos}<style>@page{size:Letter;margin:0}html,body{margin:0;padding:0;background:#fff}.comprobante-paper{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${cuerpo}</body></html>`);
+  doc.close();
+
+  try { if (doc.fonts && doc.fonts.ready) await doc.fonts.ready; } catch { /* noop */ }
+  await new Promise((r) => setTimeout(r, 150));
+
+  try {
+    console.log('[imprimir] HTML — llamando print()');
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    console.log('[imprimir] HTML — print() retornó');
+    return 'printed';
+  } finally {
+    setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 1000);
   }
 }
 

@@ -194,3 +194,94 @@ export function buildComprobanteDocDefinition(modelo, logoDataUri = null) {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// HTML del comprobante para IMPRIMIR.
+// Espeja exactamente el markup de ComprobantePreview (mismo modelo y tema).
+// Imprimir HTML es fiable en todos los navegadores (el iframe con PDF NO abre
+// el diálogo en Chromium); el PDF se conserva para descargar/compartir.
+// ---------------------------------------------------------------------------
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function buildComprobanteHTML(modelo, logoDataUri = null) {
+  const C = COMPROBANTE_THEME.colores;
+  const filas = [
+    ['Alumno', modelo.alumno],
+    ['Concepto', modelo.concepto],
+    ['Cuenta', `Ref: ${modelo.cuentaRef}`],
+    ['Fecha de pago', modelo.fechaPago],
+    ['Método de pago', modelo.metodo],
+    ['Referencia', modelo.referencia],
+  ];
+
+  const filasHtml = filas
+    .map(([label, value]) => `
+      <div style="display:flex;justify-content:space-between;padding:2pt 0;border-bottom:0.5pt solid #ddd">
+        <span style="font-size:10pt;color:#64748B">${esc(label)}</span>
+        <span style="font-size:10pt;font-weight:bold;color:#1f2937;text-align:right">${esc(value)}</span>
+      </div>`)
+    .join('');
+
+  let totalesHtml = '';
+  if (modelo.totales) {
+    const saldoNum = parseFloat(String(modelo.totales.saldo).replace(/[$,]/g, '').trim());
+    const saldoCero = !Number.isNaN(saldoNum) && saldoNum <= 0;
+    const rows = [
+      ['Monto de la cuenta', modelo.totales.monto, false],
+      ['Monto pagado', modelo.totales.pagado, false],
+      ['Saldo pendiente', modelo.totales.saldo, true],
+    ];
+    totalesHtml = `
+      <div style="margin-top:8pt">
+        ${rows
+          .map(([label, value, bold], i) => `
+          <div style="display:flex;justify-content:space-between;${i === 0 ? 'border-top:1pt solid #A7C7E7;' : ''}border-bottom:0.5pt solid #ddd">
+            <span style="font-size:10pt;color:#64748B;font-weight:${bold ? 'bold' : 'normal'}">${esc(label)}</span>
+            <span style="font-size:10pt;text-align:right;font-weight:${bold ? 'bold' : 'normal'};color:${bold ? (saldoCero ? '#16A34A' : '#1f2937') : '#1f2937'}">${esc(value)}</span>
+          </div>`)
+          .join('')}
+      </div>`;
+  }
+
+  const notaHtml = modelo.esLegacy
+    ? '<div style="font-style:italic;font-size:9pt;color:#999999;margin-top:6pt">Comprobante reconstruido desde el historial de pagos.</div>'
+    : '';
+
+  const logoHtml = logoDataUri
+    ? `<img src="${logoDataUri}" alt="Logo" style="position:absolute;top:calc(75% + 10px);left:50%;transform:translate(-50%,-50%);height:266px;width:auto;z-index:0">`
+    : '';
+
+  return `
+  <div class="comprobante-paper" style="position:relative;width:816px;min-height:1056px;margin:0 auto;padding:40pt 40pt;background-color:${C.papel};font-family:Roboto,sans-serif;color:${C.texto}">
+    <div style="position:relative;isolation:isolate">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8pt">
+        <div>
+          <span style="font-size:20pt;font-weight:bold">
+            <span style="color:#84f542">Colegio </span><span style="color:#4269f5">${esc(modelo.emisor.nombre)}</span>
+          </span>
+          <div style="font-size:13pt;color:#666666">Comprobante de Pago</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10pt;font-weight:bold">Folio: ${esc(modelo.folio)}</div>
+          <div style="font-size:10pt;color:#666666">Fecha de emisión: ${esc(modelo.fechaEmision)}</div>
+        </div>
+      </div>
+      <div style="position:relative">
+        ${logoHtml}
+        <div style="position:relative;z-index:1">${filasHtml}</div>
+      </div>
+      <div style="background-color:#EBF1F7;border-top:1pt solid #A7C7E7;border-bottom:1pt solid #A7C7E7;padding:6pt 8pt;margin-top:8pt">
+        <div style="text-align:right;font-size:16pt;font-weight:bold;color:${C.primario}">Monto: ${esc(modelo.monto)}</div>
+      </div>
+      ${totalesHtml}
+      ${notaHtml}
+      <div style="text-align:right;font-size:8pt;color:${C.nota};margin-top:24pt">Página 1 de 1</div>
+    </div>
+  </div>`;
+}
