@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Download, Printer, Share2, Loader2 } from 'lucide-react';
 import logo25Url from '../assets/logo-ausubel-25.png';
 import { COMPROBANTE_THEME, buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, compartirComprobantePagoPDF, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteFile, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
 
 const T = COMPROBANTE_THEME;
 
@@ -10,8 +10,23 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
   const paperRef = useRef(null);
   const metodoRowRef = useRef(null);
   const [logoTop, setLogoTop] = useState(null);
-  const [compartiendo, setCompartiendo] = useState(false);
+  const [shareFile, setShareFile] = useState(null);
+  const [preparandoShare, setPreparandoShare] = useState(false);
   const admiteCompartir = puedeCompartirComprobante();
+
+  useEffect(() => {
+    if (!isOpen || !pago || !puedeCompartirComprobante()) { setShareFile(null); return; }
+    let cancelado = false;
+    setPreparandoShare(true);
+    setShareFile(null);
+    const cuentaPre = (cuentas || []).find((c) => c.id === pago.cxc_id) || null;
+    crearComprobanteFile(pago, cuentaPre)
+      .then(({ file }) => { if (!cancelado) setShareFile(file); })
+      .catch(() => { if (!cancelado) setShareFile(null); })
+      .finally(() => { if (!cancelado) setPreparandoShare(false); });
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, pago?.id]);
 
   useEffect(() => {
     const measure = () => {
@@ -39,16 +54,19 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
   };
 
   const handleCompartir = async () => {
-    setCompartiendo(true);
+    if (!shareFile) {
+      // Aún no está listo (o falló la pre-generación): fallback a descarga
+      try { await exportComprobantePagoPDF(pago, cuenta, { action: 'download' }); } catch (err) { alert(err.message || 'Error al generar el comprobante'); }
+      return;
+    }
     try {
-      const res = await compartirComprobantePagoPDF(pago, cuenta);
-      if (res === 'downloaded') {
-        alert('Tu navegador no permite compartir archivos; se descargó el PDF.');
-      }
+      const res = await compartirComprobanteFile(shareFile, {
+        title: `Comprobante ${pago.folio || ''}`.trim(),
+        text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
+      });
+      if (res === 'unsupported') { await exportComprobantePagoPDF(pago, cuenta, { action: 'download' }); alert('Tu navegador no permite compartir archivos; se descargó el PDF.'); }
     } catch (err) {
       alert(err.message || 'Error al compartir el comprobante');
-    } finally {
-      setCompartiendo(false);
     }
   };
 
@@ -89,10 +107,10 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
             {admiteCompartir && (
               <button
                 onClick={handleCompartir}
-                disabled={compartiendo}
+                disabled={preparandoShare || !shareFile}
                 className="flex items-center gap-2 px-4 py-2 bg-[#A7C7E7] text-slate-800 text-sm font-bold rounded-xl hover:brightness-105 disabled:opacity-50"
               >
-                {compartiendo ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                {preparandoShare || !shareFile ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                 Compartir
               </button>
             )}

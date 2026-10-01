@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Download, Printer, Receipt, Eye, Share2 } from 'lucide-react';
 import { fetchPagosByAlumno } from '../lib/api';
-import { exportComprobantePagoPDF, compartirComprobantePagoPDF, puedeCompartirComprobante } from '../lib/pdfExport';
+import { buildComprobanteModel } from '../lib/comprobanteModel';
+import { exportComprobantePagoPDF, crearComprobanteFile, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
 import ComprobantePreview from './ComprobantePreview';
 
 const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Colegiatura', cuentaInicial = '' }) => {
@@ -10,6 +11,8 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   const [error, setError] = useState(null);
   const [filtroCuenta, setFiltroCuenta] = useState(cuentaInicial);
   const [pagoPreview, setPagoPreview] = useState(null);
+  const [shareFiles, setShareFiles] = useState({});
+  const [preparandoShare, setPreparandoShare] = useState({});
 
   const loadPagos = async () => {
     if (!alumno?.alumno_id) return;
@@ -34,6 +37,25 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!puedeCompartirComprobante() || pagos.length === 0) return;
+    let cancelado = false;
+    (async () => {
+      for (const p of pagos) {
+        if (cancelado) return;
+        setPreparandoShare((prev) => ({ ...prev, [p.id]: true }));
+        try {
+          const cuenta = (cuentas || []).find((c) => c.id === p.cxc_id);
+          const { file } = await crearComprobanteFile(p, cuenta);
+          if (!cancelado) setShareFiles((prev) => ({ ...prev, [p.id]: file }));
+        } catch { /* ignore: el botón hará fallback */ }
+        finally { if (!cancelado) setPreparandoShare((prev) => ({ ...prev, [p.id]: false })); }
+      }
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagos]);
+
   if (!isOpen || !alumno) return null;
 
   const cuentasFiltradas = (cuentas || []).filter((c) =>
@@ -48,14 +70,36 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   const handlePdf = async (pago, action) => {
     try {
       const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
-      if (action === 'share') {
-        const res = await compartirComprobantePagoPDF(pago, cuenta);
-        if (res === 'downloaded') alert('Tu navegador no permite compartir archivos; se descargó el PDF.');
-        return;
-      }
       await exportComprobantePagoPDF(pago, cuenta, { action });
     } catch (err) {
       alert(err.message || 'Error al generar el comprobante');
+    }
+  };
+
+  const handleCompartirRow = async (pago) => {
+    const file = shareFiles[pago.id];
+    if (!file) {
+      try {
+        const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
+        await exportComprobantePagoPDF(pago, cuenta, { action: 'download' });
+      } catch (err) {
+        alert(err.message || 'Error al generar el comprobante');
+      }
+      return;
+    }
+    try {
+      const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
+      const modelo = buildComprobanteModel(pago, cuenta);
+      const res = await compartirComprobanteFile(file, {
+        title: `Comprobante ${pago.folio || ''}`.trim(),
+        text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
+      });
+      if (res === 'unsupported') {
+        await exportComprobantePagoPDF(pago, cuenta, { action: 'download' });
+        alert('Tu navegador no permite compartir archivos; se descargó el PDF.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error al compartir el comprobante');
     }
   };
 
@@ -143,11 +187,12 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
                   </button>
                   {puedeCompartirComprobante() && (
                     <button
-                      onClick={() => handlePdf(pago, 'share')}
-                      className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                      onClick={() => handleCompartirRow(pago)}
+                      disabled={preparandoShare[pago.id] || !shareFiles[pago.id]}
+                      className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
                       title="Compartir"
                     >
-                      <Share2 size={16} />
+                      {preparandoShare[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                     </button>
                   )}
                   <button
