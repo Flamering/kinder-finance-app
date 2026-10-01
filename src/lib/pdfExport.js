@@ -116,12 +116,69 @@ function obtenerLogoDataUri() {
   return logoDataUriPromise;
 }
 
+// ---------------------------------------------------------------------------
+// Carga de pdfmake con reintentos.
+// La importación dinámica puede fallar por un corte transitorio de red o por
+// un despliegue a medio aplicar. El navegador CACHEA ese fallo para toda la
+// sesión de la página (module map), así que un solo fallo rompe todas las
+// impresiones/descargas posteriores. Reintentamos con un query de
+// cache-busting para forzar una petición nueva y auto-sanar sin recargar.
+// ---------------------------------------------------------------------------
+function urlDesdeError(err) {
+  const msg = String((err && err.message) || '');
+  // Chrome/Edge: "Failed to fetch dynamically imported module: <url>"
+  // Firefox: "error loading dynamically imported module: <url>"
+  const m = /dynamically imported module[:\s]+(\S+)/i.exec(msg) || /(https?:\/\/\S+)/i.exec(msg);
+  return m ? m[1] : null;
+}
+
+async function importarChunk(loader, etiqueta) {
+  let ultimo = null;
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      console.log(`[pdf] importando ${etiqueta} (intento ${intento}/3)`);
+      return await loader();
+    } catch (err) {
+      ultimo = err;
+      console.log(`[pdf] import ${etiqueta} intento ${intento} FALLÓ`, err);
+      const url = urlDesdeError(err);
+      if (url) {
+        const bust = url + (url.includes('?') ? '&' : '?') + 'retry=' + intento;
+        try {
+          console.log(`[pdf] reintentando ${etiqueta} con cache-busting`, bust);
+          return await import(/* @vite-ignore */ bust);
+        } catch (err2) {
+          ultimo = err2;
+          console.log(`[pdf] reintento ${etiqueta} ${intento} falló`, err2);
+        }
+      }
+      await new Promise((r) => setTimeout(r, 400 * intento));
+    }
+  }
+  throw ultimo;
+}
+
+let libreriasPdfMake = null;
+function cargarLibreriasPdfMake() {
+  if (!libreriasPdfMake) {
+    libreriasPdfMake = (async () => {
+      const pdfMakeMod = await importarChunk(() => import('pdfmake/build/pdfmake'), 'pdfmake');
+      const pdfFontsMod = await importarChunk(() => import('pdfmake/build/vfs_fonts'), 'vfs_fonts');
+      const pdfMake = pdfMakeMod.default || pdfMakeMod;
+      pdfMake.vfs = pdfFontsMod.vfs || pdfFontsMod.default || pdfFontsMod;
+      return pdfMake;
+    })().catch((err) => {
+      libreriasPdfMake = null; // permite un nuevo intento en la próxima acción
+      throw err;
+    });
+  }
+  return libreriasPdfMake;
+}
+
 // Returns { pdf, filename, modelo } — pdf is the pdfmake pdf object (browser build)
 async function crearComprobantePDF(pago, cuenta) {
   console.log('[pdf] generar docDefinition', { folio: pago?.folio });
-  const pdfMake = (await import('pdfmake/build/pdfmake')).default;
-  const pdfFonts = await import('pdfmake/build/vfs_fonts');
-  pdfMake.vfs = pdfFonts.vfs;
+  const pdfMake = await cargarLibreriasPdfMake();
   const modelo = buildComprobanteModel(pago, cuenta);
   const logoDataUri = await obtenerLogoDataUri();
   console.log('[pdf] logo cargado', { bytes: typeof logoDataUri === 'string' ? logoDataUri.length : 0 });
