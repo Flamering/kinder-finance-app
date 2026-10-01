@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Download, Printer, Receipt, Eye, Share2 } from 'lucide-react';
 import { fetchPagosByAlumno } from '../lib/api';
 import { buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, crearComprobanteFile, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteBlob, abrirComprobanteParaImprimir, imprimirComprobantePagoPDF, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
 import ComprobantePreview from './ComprobantePreview';
 
 const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Colegiatura', cuentaInicial = '' }) => {
@@ -11,8 +11,8 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   const [error, setError] = useState(null);
   const [filtroCuenta, setFiltroCuenta] = useState(cuentaInicial);
   const [pagoPreview, setPagoPreview] = useState(null);
-  const [shareFiles, setShareFiles] = useState({});
-  const [preparandoShare, setPreparandoShare] = useState({});
+  const [comprobantesListos, setComprobantesListos] = useState({});
+  const [preparandoListo, setPreparandoListo] = useState({});
 
   const loadPagos = async () => {
     if (!alumno?.alumno_id) return;
@@ -38,18 +38,18 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
   }, [isOpen]);
 
   useEffect(() => {
-    if (!puedeCompartirComprobante() || pagos.length === 0) return;
+    if (pagos.length === 0) return;
     let cancelado = false;
     (async () => {
       for (const p of pagos) {
         if (cancelado) return;
-        setPreparandoShare((prev) => ({ ...prev, [p.id]: true }));
+        setPreparandoListo((prev) => ({ ...prev, [p.id]: true }));
         try {
           const cuenta = (cuentas || []).find((c) => c.id === p.cxc_id);
-          const { file } = await crearComprobanteFile(p, cuenta);
-          if (!cancelado) setShareFiles((prev) => ({ ...prev, [p.id]: file }));
+          const listo = await crearComprobanteBlob(p, cuenta);
+          if (!cancelado) setComprobantesListos((prev) => ({ ...prev, [p.id]: listo }));
         } catch { /* ignore: el botón hará fallback */ }
-        finally { if (!cancelado) setPreparandoShare((prev) => ({ ...prev, [p.id]: false })); }
+        finally { if (!cancelado) setPreparandoListo((prev) => ({ ...prev, [p.id]: false })); }
       }
     })();
     return () => { cancelado = true; };
@@ -76,8 +76,25 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
     }
   };
 
+  const handleImprimirRow = async (pago) => {
+    try {
+      const listo = comprobantesListos[pago.id];
+      if (listo) {
+        const res = abrirComprobanteParaImprimir(listo.blob);
+        if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
+        return;
+      }
+      const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
+      const res = await imprimirComprobantePagoPDF(pago, cuenta);
+      if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
+    } catch (err) {
+      alert(err.message || 'Error al imprimir el comprobante');
+    }
+  };
+
   const handleCompartirRow = async (pago) => {
-    const file = shareFiles[pago.id];
+    const listo = comprobantesListos[pago.id];
+    const file = listo?.file;
     if (!file) {
       try {
         const cuenta = (cuentas || []).find((c) => c.id === pago.cxc_id);
@@ -188,11 +205,11 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
                   {puedeCompartirComprobante() && (
                     <button
                       onClick={() => handleCompartirRow(pago)}
-                      disabled={preparandoShare[pago.id] || !shareFiles[pago.id]}
+                      disabled={preparandoListo[pago.id] || !comprobantesListos[pago.id]}
                       className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
                       title="Compartir"
                     >
-                      {preparandoShare[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                      {preparandoListo[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                     </button>
                   )}
                   <button
@@ -203,11 +220,12 @@ const ComprobantesModal = ({ isOpen, onClose, alumno, cuentas, tipoCuenta = 'Col
                     <Download size={16} />
                   </button>
                   <button
-                    onClick={() => handlePdf(pago, 'print')}
-                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                    onClick={() => handleImprimirRow(pago)}
+                    disabled={!!preparandoListo[pago.id]}
+                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
                     title="Imprimir"
                   >
-                    <Printer size={16} />
+                    {preparandoListo[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
                   </button>
                 </div>
               </div>

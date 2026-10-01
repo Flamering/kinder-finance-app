@@ -144,9 +144,43 @@ export function puedeCompartirComprobante() {
 
 // Genera el File listo para compartir. Asíncrono: NO requiere gesto de usuario.
 export async function crearComprobanteFile(pago, cuenta) {
+  const { file, filename, modelo } = await crearComprobanteBlob(pago, cuenta);
+  return { file, filename, modelo };
+}
+
+// Genera blob + file + filename del comprobante (asíncrono; NO requiere gesto).
+export async function crearComprobanteBlob(pago, cuenta) {
   const { pdf, filename, modelo } = await crearComprobantePDF(pago, cuenta);
-  const blob = await pdf.getBlob(); // pdfmake 0.3.x: getBlob() devuelve Promise<Blob>
-  return { file: new File([blob], filename, { type: 'application/pdf' }), filename, modelo };
+  const blob = await pdf.getBlob();
+  return { blob, file: new File([blob], filename, { type: 'application/pdf' }), filename, modelo };
+}
+
+// Abre un PDF ya generado en una pestaña nueva. DEBE llamarse dentro del click.
+// Retorna 'opened' | 'blocked'.
+export function abrirComprobanteParaImprimir(blob) {
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) { URL.revokeObjectURL(url); return 'blocked'; }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return 'opened';
+}
+
+// Fallback sin pre-generación: abre la pestaña de forma SÍNCRONA dentro del click
+// y la navega al PDF cuando está listo (así el bloqueador no la corta).
+// Retorna 'opened' | 'blocked'.
+export async function imprimirComprobantePagoPDF(pago, cuenta) {
+  const win = window.open('', '_blank');
+  if (!win) return 'blocked';
+  try {
+    const { blob } = await crearComprobanteBlob(pago, cuenta);
+    const url = URL.createObjectURL(blob);
+    win.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return 'opened';
+  } catch (err) {
+    try { win.close(); } catch { /* noop */ }
+    throw err;
+  }
 }
 
 // Comparte un File YA generado. DEBE llamarse dentro del handler del click

@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Download, Printer, Share2, Loader2 } from 'lucide-react';
 import logo25Url from '../assets/logo-ausubel-25.png';
 import { COMPROBANTE_THEME, buildComprobanteModel } from '../lib/comprobanteModel';
-import { exportComprobantePagoPDF, crearComprobanteFile, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
+import { exportComprobantePagoPDF, crearComprobanteBlob, abrirComprobanteParaImprimir, imprimirComprobantePagoPDF, compartirComprobanteFile, puedeCompartirComprobante } from '../lib/pdfExport';
 
 const T = COMPROBANTE_THEME;
 
@@ -10,20 +10,20 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
   const paperRef = useRef(null);
   const metodoRowRef = useRef(null);
   const [logoTop, setLogoTop] = useState(null);
-  const [shareFile, setShareFile] = useState(null);
-  const [preparandoShare, setPreparandoShare] = useState(false);
+  const [comprobante, setComprobante] = useState(null);
+  const [preparando, setPreparando] = useState(false);
   const admiteCompartir = puedeCompartirComprobante();
 
   useEffect(() => {
-    if (!isOpen || !pago || !puedeCompartirComprobante()) { setShareFile(null); return; }
+    if (!isOpen || !pago) { setComprobante(null); return; }
     let cancelado = false;
-    setPreparandoShare(true);
-    setShareFile(null);
+    setPreparando(true);
+    setComprobante(null);
     const cuentaPre = (cuentas || []).find((c) => c.id === pago.cxc_id) || null;
-    crearComprobanteFile(pago, cuentaPre)
-      .then(({ file }) => { if (!cancelado) setShareFile(file); })
-      .catch(() => { if (!cancelado) setShareFile(null); })
-      .finally(() => { if (!cancelado) setPreparandoShare(false); });
+    crearComprobanteBlob(pago, cuentaPre)
+      .then((res) => { if (!cancelado) setComprobante(res); })
+      .catch(() => { if (!cancelado) setComprobante(null); })
+      .finally(() => { if (!cancelado) setPreparando(false); });
     return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, pago?.id]);
@@ -53,14 +53,28 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
     }
   };
 
+  const handleImprimir = async () => {
+    try {
+      if (comprobante) {
+        const res = abrirComprobanteParaImprimir(comprobante.blob);
+        if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
+        return;
+      }
+      const res = await imprimirComprobantePagoPDF(pago, cuenta);
+      if (res === 'blocked') alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio, o usa Descargar PDF.');
+    } catch (err) {
+      alert(err.message || 'Error al imprimir el comprobante');
+    }
+  };
+
   const handleCompartir = async () => {
-    if (!shareFile) {
+    if (!comprobante) {
       // Aún no está listo (o falló la pre-generación): fallback a descarga
       try { await exportComprobantePagoPDF(pago, cuenta, { action: 'download' }); } catch (err) { alert(err.message || 'Error al generar el comprobante'); }
       return;
     }
     try {
-      const res = await compartirComprobanteFile(shareFile, {
+      const res = await compartirComprobanteFile(comprobante.file, {
         title: `Comprobante ${pago.folio || ''}`.trim(),
         text: `Comprobante de pago — ${modelo.alumno} — ${modelo.monto}`,
       });
@@ -98,19 +112,20 @@ const ComprobantePreview = ({ isOpen, onClose, pago, cuentas }) => {
               Descargar PDF
             </button>
             <button
-              onClick={() => handlePdf('print')}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300"
+              onClick={handleImprimir}
+              disabled={preparando}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 disabled:opacity-50"
             >
-              <Printer size={16} />
+              {preparando ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
               Imprimir
             </button>
             {admiteCompartir && (
               <button
                 onClick={handleCompartir}
-                disabled={preparandoShare || !shareFile}
+                disabled={preparando || !comprobante}
                 className="flex items-center gap-2 px-4 py-2 bg-[#A7C7E7] text-slate-800 text-sm font-bold rounded-xl hover:brightness-105 disabled:opacity-50"
               >
-                {preparandoShare || !shareFile ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                {preparando || !comprobante ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                 Compartir
               </button>
             )}
