@@ -23,6 +23,187 @@ function statusChip(estado) {
   return 'bg-amber-100 text-amber-700 border border-amber-200';
 }
 
+function sortCuentas(arr) {
+  const out = [...arr];
+  out.sort((a, b) => {
+    const aPag = a.estado === 'Pagado' ? 1 : 0;
+    const bPag = b.estado === 'Pagado' ? 1 : 0;
+    if (aPag !== bPag) return aPag - bPag;
+    const av = a.fecha_vencimiento || '';
+    const bv = b.fecha_vencimiento || '';
+    if (!av && bv) return 1;
+    if (av && !bv) return -1;
+    if (av !== bv) return av < bv ? -1 : 1;
+    const ae = a.fecha_emision || '';
+    const be = b.fecha_emision || '';
+    if (ae !== be) return ae < be ? -1 : 1;
+    return 0;
+  });
+  return out;
+}
+
+function CuentaBlock({
+  cuenta,
+  pagosCuenta,
+  expandida,
+  onToggle,
+  comprobantesListos,
+  preparandoListo,
+  admiteCompartir,
+  onRegistrarPago,
+  onEditarCuenta,
+  onPreview,
+  onDescargar,
+  onImprimir,
+  onCompartir,
+}) {
+  const monto = parseFloat(cuenta.monto || 0);
+  const pagado = parseFloat(cuenta.monto_pagado || 0);
+  const saldo = monto - pagado;
+  return (
+    <div className="rounded-xl border border-slate-200 p-4 mb-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="font-bold text-slate-800">{cuenta.concepto}</span>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
+            cuenta.tipo === 'Eventual'
+              ? 'bg-[#A7C7E7]/20 text-slate-700 border-[#A7C7E7]/40'
+              : 'bg-slate-100 text-slate-600 border-slate-200'
+          }`}
+        >
+          {cuenta.tipo}
+        </span>
+        <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusChip(cuenta.estado)}`}>
+          {cuenta.estado}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-3">
+        <div>
+          <p className="text-[10px] text-slate-500">Ref</p>
+          <p className="text-[10px] font-semibold text-slate-800">ID-{String(cuenta.id || '').slice(0, 8)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-500">Emisión</p>
+          <p className="text-[10px] font-semibold text-slate-800">{cuenta.fecha_emision || '—'}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-500">Vencimiento</p>
+          <p className="text-[10px] font-semibold text-slate-800">{cuenta.fecha_vencimiento || '—'}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-500">Monto</p>
+          <p className="text-[10px] font-semibold text-slate-800">{fmtMoney(monto)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-500">Pagado</p>
+          <p className="text-[10px] font-semibold text-green-600">{fmtMoney(pagado)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-500">Saldo</p>
+          <p className={`text-[10px] font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {fmtMoney(Math.max(saldo, 0))}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 mt-3 flex-wrap">
+        {saldo > 0 && (
+          <button
+            onClick={() => { try { onRegistrarPago && onRegistrarPago(cuenta); } catch (err) { alert(err.message || 'Error al registrar el pago'); } }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:brightness-110"
+          >
+            <DollarSign size={14} />
+            Registrar pago
+          </button>
+        )}
+        <button
+          onClick={() => { try { onEditarCuenta && onEditarCuenta(cuenta); } catch (err) { alert(err.message || 'Error al editar la cuenta'); } }}
+          className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200"
+        >
+          <Pencil size={14} />
+          Editar
+        </button>
+        <button
+          onClick={() => onToggle(cuenta.id)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200"
+        >
+          <Receipt size={14} />
+          Comprobantes ({pagosCuenta.length})
+        </button>
+      </div>
+
+      {expandida && (
+        <div className="mt-3 space-y-2">
+          {pagosCuenta.length === 0 ? (
+            <p className="text-xs text-slate-500">Sin comprobantes registrados.</p>
+          ) : (
+            pagosCuenta.map((pago) => (
+              <div
+                key={pago.id}
+                className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-slate-700">{pago.folio}</span>
+                    {pago.origen === 'legacy' && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-200 text-slate-500">
+                        reconstruido
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                    {pago.fecha} • {pago.concepto}
+                  </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A7C7E7]/20 text-slate-700 border border-[#A7C7E7]/40">
+                    {pago.metodo_pago}
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-slate-700 shrink-0">
+                  ${parseFloat(pago.monto).toLocaleString()}
+                </span>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => onPreview(pago)}
+                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Vista previa"
+                  >
+                    <Eye size={16} />
+                  </button>
+                  {admiteCompartir && (
+                    <button
+                      onClick={() => onCompartir(pago)}
+                      disabled={preparandoListo[pago.id] || !comprobantesListos[pago.id]}
+                      className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                      title="Compartir"
+                    >
+                      {preparandoListo[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onDescargar(pago)}
+                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Descargar PDF"
+                  >
+                    <Download size={16} />
+                  </button>
+                  <button
+                    onClick={() => onImprimir(pago)}
+                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Imprimir"
+                  >
+                    <Printer size={16} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DetalleAlumnoCxC = ({ grupo, onRegistrarPago, onEditarCuenta, onNuevoPagoEventual, recargarPagos }) => {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -89,23 +270,30 @@ const DetalleAlumnoCxC = ({ grupo, onRegistrarPago, onEditarCuenta, onNuevoPagoE
     };
   }, []);
 
-  const cuentasOrdenadas = useMemo(() => {
-    const arr = [...cuentas];
-    arr.sort((a, b) => {
-      const aPag = a.estado === 'Pagado' ? 1 : 0;
-      const bPag = b.estado === 'Pagado' ? 1 : 0;
-      if (aPag !== bPag) return aPag - bPag;
-      const av = a.fecha_vencimiento || '';
-      const bv = b.fecha_vencimiento || '';
-      if (!av && bv) return 1;
-      if (av && !bv) return -1;
-      if (av !== bv) return av < bv ? -1 : 1;
-      const ae = a.fecha_emision || '';
-      const be = b.fecha_emision || '';
-      if (ae !== be) return ae < be ? -1 : 1;
-      return 0;
-    });
-    return arr;
+  const cuentasOrdenadas = useMemo(() => sortCuentas(cuentas), [cuentas]);
+
+  const cuentasColegiatura = useMemo(
+    () => cuentasOrdenadas.filter((c) => c.tipo !== 'Eventual'),
+    [cuentasOrdenadas]
+  );
+  const cuentasEventuales = useMemo(
+    () => cuentasOrdenadas.filter((c) => c.tipo === 'Eventual'),
+    [cuentasOrdenadas]
+  );
+
+  const resumen = useMemo(() => {
+    const total = cuentas.length;
+    const nColegiatura = cuentas.filter((c) => c.tipo !== 'Eventual').length;
+    const nEventuales = cuentas.filter((c) => c.tipo === 'Eventual').length;
+    const totalFacturado = cuentas.reduce((acc, c) => acc + parseFloat(c.monto || 0), 0);
+    const totalPagado = cuentas.reduce((acc, c) => acc + parseFloat(c.monto_pagado || 0), 0);
+    const saldo = cuentas.reduce((acc, c) => acc + (parseFloat(c.monto || 0) - parseFloat(c.monto_pagado || 0)), 0);
+    const pendientes = cuentas.filter((c) => c.estado !== 'Pagado' && c.fecha_vencimiento);
+    let proximo = '—';
+    if (pendientes.length > 0) {
+      proximo = pendientes.reduce((min, c) => (c.fecha_vencimiento < min ? c.fecha_vencimiento : min), pendientes[0].fecha_vencimiento);
+    }
+    return { total, nColegiatura, nEventuales, totalFacturado, totalPagado, saldo, proximo };
   }, [cuentas]);
 
   const aggregate = useMemo(() => {
@@ -202,6 +390,49 @@ const DetalleAlumnoCxC = ({ grupo, onRegistrarPago, onEditarCuenta, onNuevoPagoE
 
   const admiteCompartir = puedeCompartirComprobante();
 
+  const cuentaBlockProps = (cuenta) => ({
+    cuenta,
+    pagosCuenta: pagosPorCuenta[cuenta.id] || [],
+    expandida: !!expandidas[cuenta.id],
+    onToggle: toggleExpandida,
+    comprobantesListos,
+    preparandoListo,
+    admiteCompartir,
+    onRegistrarPago,
+    onEditarCuenta,
+    onPreview: setPagoPreview,
+    onDescargar: handleDescargar,
+    onImprimir: handleImprimir,
+    onCompartir: handleCompartir,
+  });
+
+  const renderEstadoCarga = () => {
+    if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10">
+          <Loader2 size={32} className="animate-spin text-slate-400 mb-3" />
+          <p className="text-sm text-slate-500">Cargando comprobantes...</p>
+        </div>
+      );
+    }
+    if (error) {
+      return (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button
+            onClick={loadPagos}
+            className="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:brightness-110 shrink-0"
+          >
+            Reintentar
+          </button>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const estadoCarga = renderEstadoCarga();
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -211,194 +442,78 @@ const DetalleAlumnoCxC = ({ grupo, onRegistrarPago, onEditarCuenta, onNuevoPagoE
             {aggregate.label}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+      </div>
+
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 mb-4">
+        <h3 className="uppercase tracking-wider text-[10px] font-bold text-slate-600 mb-4">
+          Resumen
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div>
+            <p className="text-[10px] uppercase text-slate-500 font-bold">Cuentas</p>
+            <p className="text-lg font-black text-slate-800">{resumen.total}</p>
+            <p className="text-[10px] text-slate-500">{resumen.nColegiatura} colegiatura · {resumen.nEventuales} eventuales</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-slate-500 font-bold">Total facturado</p>
+            <p className="text-lg font-black text-slate-800">{fmtMoney(resumen.totalFacturado)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-slate-500 font-bold">Total pagado</p>
+            <p className="text-lg font-black" style={{ color: '#16A34A' }}>{fmtMoney(resumen.totalPagado)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-slate-500 font-bold">Saldo pendiente</p>
+            <p className="text-lg font-black" style={{ color: resumen.saldo > 0 ? '#DC2626' : '#16A34A' }}>{fmtMoney(Math.max(resumen.saldo, 0))}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-slate-500 font-bold">Próximo vencimiento</p>
+            <p className="text-lg font-black text-slate-800">{resumen.proximo}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 mb-4">
+        <h3 className="uppercase tracking-wider text-[10px] font-bold text-slate-600 mb-4">
+          Cuentas de colegiatura ({cuentasColegiatura.length})
+        </h3>
+
+        {estadoCarga || (cuentasColegiatura.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-6">Sin cuentas de colegiatura.</p>
+        ) : (
+          <div>
+            {cuentasColegiatura.map((cuenta) => (
+              <CuentaBlock key={cuenta.id} {...cuentaBlockProps(cuenta)} />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="uppercase tracking-wider text-[10px] font-bold text-slate-600">
+            Pagos eventuales ({cuentasEventuales.length})
+          </h3>
           {grupo.alumno_id && (
             <button
               onClick={() => { try { onNuevoPagoEventual && onNuevoPagoEventual(); } catch (err) { alert(err.message || 'Error al abrir el pago eventual'); } }}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:brightness-110"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:brightness-110"
             >
               <Plus size={16} />
               Nuevo pago eventual
             </button>
           )}
         </div>
-      </div>
 
-      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5">
-        <h3 className="uppercase tracking-wider text-[10px] font-bold text-slate-600 mb-4">
-          Cuentas ({cuentasOrdenadas.length})
-        </h3>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-10">
-            <Loader2 size={32} className="animate-spin text-slate-400 mb-3" />
-            <p className="text-sm text-slate-500">Cargando comprobantes...</p>
-          </div>
-        ) : error ? (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center justify-between gap-3">
-            <span>{error}</span>
-            <button
-              onClick={loadPagos}
-              className="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:brightness-110 shrink-0"
-            >
-              Reintentar
-            </button>
-          </div>
-        ) : cuentasOrdenadas.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-6">Sin cuentas registradas.</p>
+        {estadoCarga || (cuentasEventuales.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-6">Aún no hay pagos eventuales para este alumno.</p>
         ) : (
           <div>
-            {cuentasOrdenadas.map((cuenta) => {
-              const monto = parseFloat(cuenta.monto || 0);
-              const pagado = parseFloat(cuenta.monto_pagado || 0);
-              const saldo = monto - pagado;
-              const pagosCuenta = pagosPorCuenta[cuenta.id] || [];
-              const expandida = !!expandidas[cuenta.id];
-              return (
-                <div key={cuenta.id} className="rounded-xl border border-slate-200 p-4 mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-800">{cuenta.concepto}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
-                        cuenta.tipo === 'Eventual'
-                          ? 'bg-[#A7C7E7]/20 text-slate-700 border-[#A7C7E7]/40'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}
-                    >
-                      {cuenta.tipo}
-                    </span>
-                    <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusChip(cuenta.estado)}`}>
-                      {cuenta.estado}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-3">
-                    <div>
-                      <p className="text-[10px] text-slate-500">Ref</p>
-                      <p className="text-[10px] font-semibold text-slate-800">ID-{String(cuenta.id || '').slice(0, 8)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500">Emisión</p>
-                      <p className="text-[10px] font-semibold text-slate-800">{cuenta.fecha_emision || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500">Vencimiento</p>
-                      <p className="text-[10px] font-semibold text-slate-800">{cuenta.fecha_vencimiento || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500">Monto</p>
-                      <p className="text-[10px] font-semibold text-slate-800">{fmtMoney(monto)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500">Pagado</p>
-                      <p className="text-[10px] font-semibold text-green-600">{fmtMoney(pagado)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500">Saldo</p>
-                      <p className={`text-[10px] font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {fmtMoney(Math.max(saldo, 0))}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
-                    {saldo > 0 && (
-                      <button
-                        onClick={() => { try { onRegistrarPago && onRegistrarPago(cuenta); } catch (err) { alert(err.message || 'Error al registrar el pago'); } }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:brightness-110"
-                      >
-                        <DollarSign size={14} />
-                        Registrar pago
-                      </button>
-                    )}
-                    <button
-                      onClick={() => { try { onEditarCuenta && onEditarCuenta(cuenta); } catch (err) { alert(err.message || 'Error al editar la cuenta'); } }}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200"
-                    >
-                      <Pencil size={14} />
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => toggleExpandida(cuenta.id)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200"
-                    >
-                      <Receipt size={14} />
-                      Comprobantes ({pagosCuenta.length})
-                    </button>
-                  </div>
-
-                  {expandida && (
-                    <div className="mt-3 space-y-2">
-                      {pagosCuenta.length === 0 ? (
-                        <p className="text-xs text-slate-500">Sin comprobantes registrados.</p>
-                      ) : (
-                        pagosCuenta.map((pago) => (
-                          <div
-                            key={pago.id}
-                            className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-bold text-slate-700">{pago.folio}</span>
-                                {pago.origen === 'legacy' && (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-200 text-slate-500">
-                                    reconstruido
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-500 truncate mt-0.5">
-                                {pago.fecha} • {pago.concepto}
-                              </p>
-                              <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A7C7E7]/20 text-slate-700 border border-[#A7C7E7]/40">
-                                {pago.metodo_pago}
-                              </span>
-                            </div>
-                            <span className="text-sm font-bold text-slate-700 shrink-0">
-                              ${parseFloat(pago.monto).toLocaleString()}
-                            </span>
-                            <div className="flex gap-1 shrink-0">
-                              <button
-                                onClick={() => setPagoPreview(pago)}
-                                className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                                title="Vista previa"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              {admiteCompartir && (
-                                <button
-                                  onClick={() => handleCompartir(pago)}
-                                  disabled={preparandoListo[pago.id] || !comprobantesListos[pago.id]}
-                                  className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
-                                  title="Compartir"
-                                >
-                                  {preparandoListo[pago.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDescargar(pago)}
-                                className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                                title="Descargar PDF"
-                              >
-                                <Download size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleImprimir(pago)}
-                                className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                                title="Imprimir"
-                              >
-                                <Printer size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {cuentasEventuales.map((cuenta) => (
+              <CuentaBlock key={cuenta.id} {...cuentaBlockProps(cuenta)} />
+            ))}
           </div>
-        )}
+        ))}
       </div>
 
       <ComprobantePreview
