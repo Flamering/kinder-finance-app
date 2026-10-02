@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   Plus,
   Info,
-  LayoutList,
   Table as TableIcon,
   Pencil,
   Trash2,
@@ -341,6 +340,10 @@ const App = () => {
   // Vista de corte diario de ingresos (sección CxC)
   const [vistaCorte, setVistaCorte] = useState(false);
 
+  // En móvil el aside (lista) ocupa toda la pantalla; verTabla lo oculta para
+  // dejar la tabla como contenido principal (en desktop siempre es visible).
+  const [verTabla, setVerTabla] = useState(false);
+
   // Cargar etiquetas desde localStorage
   useEffect(() => {
     const savedTags = localStorage.getItem('kinder-finance-tags');
@@ -398,14 +401,12 @@ const App = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Al cambiar de sección, limpiar selección y activar tabla en desktop
+  // Al cambiar de sección, limpiar selección (la tabla queda como contenido principal)
   useEffect(() => {
     setSelectedItem(null);
     setVistaCorte(false);
+    setVerTabla(false);
     setVisibleCount(8);
-    if (currentSection !== 'home' && !isMobile) {
-      setSelectedItem('__table__');
-    }
   }, [currentSection, isMobile]);
 
   // Reset visible count cuando cambia la búsqueda
@@ -652,7 +653,6 @@ const App = () => {
     }));
     setCurrentSection('cxc');
     setActiveTab('cxc');
-    setSelectedItem('__table__');
   };
 
   // Función para obtener datos filtrados
@@ -891,7 +891,8 @@ const App = () => {
       {/* SIDE SIDEBAR - Explorador */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-full md:static md:z-auto md:w-80 md:flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300
-        ${selectedItem ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
+        ${selectedItem || vistaCorte || verTabla ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
+        ${selectedItem || vistaCorte || verTabla ? ' max-md:pointer-events-none' : ''}
       `}>
         {/* Header Fijo */}
         <div className="p-4 space-y-3 bg-white border-b border-slate-200">
@@ -940,13 +941,14 @@ const App = () => {
               />
             </div>
 
-            {/* Botón de Cambio de Vista */}
+            {/* La tabla es el contenido principal: en desktop ya se ve sola,
+                en móvil se revela ocultando la lista. */}
             <button
-              onClick={() => setSelectedItem(selectedItem === '__table__' ? null : '__table__')}
-              className={`p-2 rounded-xl border transition-all flex items-center justify-center ${selectedItem === '__table__' ? 'bg-[#74739E] text-white border-[#74739E]' : 'bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200'}`}
-              title={selectedItem === '__table__' ? "Volver a Lista" : "Mostrar Tabla"}
+              onClick={() => setVerTabla(true)}
+              className="md:hidden p-2 rounded-xl border border-transparent bg-slate-100 text-slate-600 transition-all flex items-center justify-center hover:bg-slate-200 active:scale-95"
+              title="Ver tabla"
             >
-              {selectedItem === '__table__' ? <LayoutList size={18} /> : <TableIcon size={18} />}
+              <TableIcon size={18} />
             </button>
 
             <button 
@@ -1085,7 +1087,7 @@ const App = () => {
       {/* MAIN STAGE */}
       <main className={`
         fixed inset-0 z-30 md:static md:z-auto md:flex-1 md:min-h-0 transition-transform duration-300 mb-16 md:mb-0
-        ${selectedItem ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0')}
+        ${selectedItem || vistaCorte || verTabla ? 'translate-x-0' : (isMobile && currentSection !== 'home' ? 'translate-x-full' : 'translate-x-0')}
       `}>
         <div className="h-full overflow-y-auto bg-slate-50">
           <div className="w-full p-6 md:p-10">
@@ -1109,15 +1111,18 @@ const App = () => {
             </div>
           ) : currentSection === 'cxc' && vistaCorte ? (
             <CorteDiario onClose={() => setVistaCorte(false)} />
-          ) : currentSection !== 'home' && selectedItem === '__table__' ? (
+          ) : currentSection !== 'home' && !selectedItem ? (
             <div className="animate-in slide-in-from-right-10 duration-500 w-full">
               <div className="flex items-center gap-3 mb-8">
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="p-2 bg-white shadow-sm border border-slate-200 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                  <X size={18} />
-                </button>
+                {isMobile && (
+                  <button
+                    onClick={() => setVerTabla(false)}
+                    className="p-2 bg-white shadow-sm border border-slate-200 rounded-full hover:bg-slate-100 transition-colors"
+                    title="Volver a la lista"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                )}
                 <h2 className="text-xl font-bold text-slate-600">
                   {currentSection === 'alumnos' ? 'Gestión de Alumnos' :
                    currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Gestión Financiera'}
@@ -1284,9 +1289,9 @@ const App = () => {
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-card transition-shadow">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                    <div className="min-w-0">
+                      <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
                         {currentSection === 'alumnos' ? 'Alumnos' :
                          currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
                       </h1>
@@ -1296,19 +1301,31 @@ const App = () => {
                          'Registro de ingresos y gastos del kinder.'}
                       </p>
                     </div>
-                    <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-slate-100 border-slate-200 text-slate-500">
-                      {filteredData.length} registros
-                    </span>
-                    {currentSection === 'cxc' && (
-                      <button
-                        onClick={() => exportCxcVencidosPDF(filteredData)}
-                        className="ml-3 flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 active:scale-95 transition-all text-xs font-semibold"
-                        title="Exportar PDF de cuentas vencidas"
-                      >
-                        <FileDown size={14} />
-                        Exportar PDF
-                      </button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-4 py-2 rounded-full text-xs font-black uppercase border tracking-widest bg-slate-100 border-slate-200 text-slate-500">
+                        {filteredData.length} registros
+                      </span>
+                      {currentSection === 'cxc' && (
+                        <button
+                          onClick={() => exportCxcVencidosPDF(filteredData)}
+                          className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 active:scale-95 transition-all text-xs font-semibold"
+                          title="Exportar PDF de cuentas vencidas"
+                        >
+                          <FileDown size={14} />
+                          <span className="hidden sm:inline">Exportar PDF</span>
+                        </button>
+                      )}
+                      {currentSection === 'cxc' && (
+                        <button
+                          onClick={() => setVistaCorte(true)}
+                          className="flex items-center gap-2 px-3 py-2 bg-[#5A7A9A] text-white rounded-xl hover:brightness-110 active:scale-95 transition-all text-xs font-semibold"
+                          title="Corte diario"
+                        >
+                          <CalendarDays size={14} />
+                          <span className="hidden sm:inline">Corte diario</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -1557,25 +1574,10 @@ const App = () => {
             </div>
           ) : (
             <div className="h-full overflow-y-auto">
-              {currentSection === 'home' ? (
+              {currentSection === 'home' && (
                 <div className="w-full p-6 md:p-10">
                   <HomeDashboard cxcData={data.cxc} finanzasData={data.finanzas} />
                 </div>
-              ) : (
-                <>
-                  <div className="w-24 h-24 bg-slate-100 rounded-[2rem] flex items-center justify-center mb-6 text-slate-600">
-                    {currentSection === 'alumnos' ? <Users size={48} /> :
-                     currentSection === 'cxc' ? <DollarSign size={48} /> :
-                     <TrendingUp size={48} />}
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-600">
-                    {currentSection === 'alumnos' ? 'Alumnos' :
-                     currentSection === 'cxc' ? 'Cuentas por Cobrar' : 'Finanzas'}
-                  </h2>
-                  <p className="text-slate-500 max-w-md mx-auto mt-2">
-                    No hay registros para mostrar. Haz clic en el botón + para crear uno nuevo.
-                  </p>
-                </>
               )}
             </div>
           )}
