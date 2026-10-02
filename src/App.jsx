@@ -945,10 +945,11 @@ const App = () => {
                 en móvil se revela ocultando la lista. */}
             <button
               onClick={() => setVerTabla(true)}
-              className="md:hidden p-2 rounded-xl border border-transparent bg-slate-100 text-slate-600 transition-all flex items-center justify-center hover:bg-slate-200 active:scale-95"
+              className="md:hidden flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-transparent bg-slate-100 text-slate-600 transition-all hover:bg-slate-200 active:scale-95 text-xs font-semibold"
               title="Ver tabla"
             >
-              <TableIcon size={18} />
+              <TableIcon size={16} />
+              Tabla
             </button>
 
             <button 
