@@ -137,3 +137,14 @@ export async function fetchPagosByAlumno(alumnoId) {
   const data = await res.json();
   return Array.isArray(data) ? data : [];
 }
+
+// Pagos (comprobantes) dentro de un rango de fechas inclusive, ordenados por fecha.
+export async function fetchPagosByRango(desde, hasta) {
+  const res = await fetch(
+    `${API_BASE}/pagos?fecha=gte.${encodeURIComponent(desde)}&fecha=lte.${encodeURIComponent(hasta)}&eliminado=eq.false&order=fecha.asc`,
+    { headers: { Accept: 'application/json' } }
+  );
+  await throwIfNotOk(res);
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}

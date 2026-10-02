@@ -19,6 +19,7 @@ import {
   Loader2,
   AlertCircle,
   Calendar,
+  CalendarDays,
   Check,
   FileDown,
   ReceiptText
@@ -29,6 +30,7 @@ import DetalleAlumnoCxC from './components/DetalleAlumnoCxC';
 import EventualPagoModal from './components/EventualPagoModal';
 import ComprobantePreview from './components/ComprobantePreview';
 import HomeDashboard from './components/HomeDashboard';
+import CorteDiario from './components/CorteDiario';
 import { fetchSectionData, createRecord, updateRecord, softDeleteRecord, createBulkRecords, registrarPago } from './lib/api';
 import { exportCxcVencidosPDF } from './lib/pdfExport';
 
@@ -336,6 +338,9 @@ const App = () => {
   // Estado para modal de generar colegiaturas
   const [showColegiaturaModal, setShowColegiaturaModal] = useState(false);
 
+  // Vista de corte diario de ingresos (sección CxC)
+  const [vistaCorte, setVistaCorte] = useState(false);
+
   // Cargar etiquetas desde localStorage
   useEffect(() => {
     const savedTags = localStorage.getItem('kinder-finance-tags');
@@ -396,6 +401,7 @@ const App = () => {
   // Al cambiar de sección, limpiar selección y activar tabla en desktop
   useEffect(() => {
     setSelectedItem(null);
+    setVistaCorte(false);
     setVisibleCount(8);
     if (currentSection !== 'home' && !isMobile) {
       setSelectedItem('__table__');
@@ -912,6 +918,15 @@ const App = () => {
               >
                 <Plus size={18} />
               </button>
+              {currentSection === 'cxc' && (
+                <button
+                  onClick={() => setVistaCorte(true)}
+                  className="flex items-center justify-center w-9 h-9 bg-white text-slate-600 rounded-lg shadow-md border border-slate-200 hover:bg-slate-100 active:scale-95 transition-all duration-200"
+                  title="Corte diario"
+                >
+                  <CalendarDays size={18} />
+                </button>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -958,7 +973,7 @@ const App = () => {
                 return (
                   <div
                     key={section.id}
-                    onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setSearchTerm(''); }}
+                    onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setVistaCorte(false); setSearchTerm(''); }}
                     className="p-4 rounded-xl cursor-pointer transition-all hover:bg-slate-100 active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-3">
@@ -1092,6 +1107,8 @@ const App = () => {
                 Reintentar
               </button>
             </div>
+          ) : currentSection === 'cxc' && vistaCorte ? (
+            <CorteDiario onClose={() => setVistaCorte(false)} />
           ) : currentSection !== 'home' && selectedItem === '__table__' ? (
             <div className="animate-in slide-in-from-right-10 duration-500 w-full">
               <div className="flex items-center gap-3 mb-8">
@@ -1583,6 +1600,7 @@ const App = () => {
                 setActiveTab(tab.id);
                 setCurrentSection(tab.id);
                 setSelectedItem(null);
+                setVistaCorte(false);
                 setSearchTerm('');
               }}
               className="relative flex flex-col items-center justify-center w-16 h-full transition-all"
