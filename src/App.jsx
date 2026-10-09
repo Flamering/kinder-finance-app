@@ -661,8 +661,8 @@ const App = () => {
   };
 
   // Función para obtener datos filtrados
-  const getFilteredData = () => {
-    let filtered = sectionData;
+  const getFilteredData = (base = sectionData) => {
+    let filtered = base;
 
     // Filtro por búsqueda
     if (searchTerm) {
@@ -692,21 +692,16 @@ const App = () => {
 
   const filteredData = getFilteredData();
 
-  // Agrupar CxC por alumno (una tarjeta por estudiante). El detalle del grupo
-  // incluye también las cuentas eventuales del alumno (excluidas del listado).
+  // Agrupar CxC por alumno (una tarjeta por estudiante).
+  // Se filtran primero las cuentas y luego se agrupan, para que los alumnos
+  // con solo cuentas eventuales también formen grupo.
   const gruposCxc = currentSection === 'cxc'
-    ? Object.values(filteredData.reduce((acc, c) => {
+    ? Object.values(getFilteredData(data.cxc || []).reduce((acc, c) => {
         const key = c.alumno_id || c.alumno_nombre || c.id;
         if (!acc[key]) acc[key] = { __grupo: true, alumno_id: c.alumno_id, alumno_nombre: c.alumno_nombre, cuentas: [] };
         acc[key].cuentas.push(c);
         return acc;
-      }, {})).map((grupo) => {
-        const eventuales = (data.cxc || []).filter(
-          (c) => c.tipo === 'Eventual' && c.alumno_id && c.alumno_id === grupo.alumno_id
-            && !grupo.cuentas.some((g) => g.id === c.id)
-        );
-        return eventuales.length > 0 ? { ...grupo, cuentas: [...grupo.cuentas, ...eventuales] } : grupo;
-      })
+      }, {}))
     : [];
 
   const listaVisible = currentSection === 'cxc' ? gruposCxc : filteredData;
