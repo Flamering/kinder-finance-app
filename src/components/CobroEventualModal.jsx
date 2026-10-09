@@ -68,6 +68,9 @@ const CobroEventualModal = ({ isOpen, onClose, alumnos, onCreated }) => {
         metodoPago: formData.metodoPago,
         referencia: formData.referencia?.trim() ? formData.referencia.trim() : null,
       });
+      setFormData(freshForm());
+      setError(null);
+      setLoading(false);
       onCreated(result);
       onClose();
     } catch (err) {
