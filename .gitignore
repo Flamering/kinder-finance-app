@@ -28,3 +28,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local worktrees (isolated implementation workspaces)
+.worktrees/
