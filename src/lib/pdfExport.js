@@ -266,18 +266,56 @@ export async function imprimirDocumentoHTML(titulo, cuerpoHtml, cssExtra = '') {
   doc.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${titulo}</title>${estilos}<style>@page{size:Letter;margin:0}html,body{margin:0;padding:0;background:#fff}.comprobante-paper{-webkit-print-color-adjust:exact;print-color-adjust:exact}${cssExtra}</style></head><body>${cuerpoHtml}</body></html>`);
   doc.close();
 
-  try { if (doc.fonts && doc.fonts.ready) await doc.fonts.ready; } catch { /* noop */ }
-  await new Promise((r) => setTimeout(r, 150));
+  // 1.1 Esperar la carga REAL de las hojas de estilo del iframe antes de
+  // imprimir. Sin esto, la primera impresión sale en blanco: sin caché, un
+  // sleep ciego no alcanza a cargar los estilos. Timeout de seguridad 2 s.
+  await new Promise((resolve) => {
+    let done = false;
+    const listo = () => { if (!done) { done = true; resolve(); } };
+    const timer = setTimeout(() => { console.log('[imprimir] HTML — timeout esperando estilos'); listo(); }, 2000);
+    try {
+      const links = [...doc.querySelectorAll('link[rel="stylesheet"]')];
+      if (links.length === 0) { clearTimeout(timer); listo(); return; }
+      let pendientes = links.length;
+      const cuenta = () => { if (--pendientes <= 0) { clearTimeout(timer); listo(); } };
+      links.forEach((l) => {
+        if (l.sheet) { cuenta(); return; }
+        l.addEventListener('load', cuenta, { once: true });
+        l.addEventListener('error', cuenta, { once: true });
+      });
+    } catch (e) { console.log('[imprimir] HTML — error esperando estilos', e); clearTimeout(timer); listo(); }
+  });
+  console.log('[imprimir] HTML — estilos listos');
 
-  try {
-    console.log('[imprimir] HTML — llamando print()');
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-    console.log('[imprimir] HTML — print() retornó');
-    return 'printed';
-  } finally {
-    setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 1000);
+  try { if (doc.fonts && doc.fonts.ready) await Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 2000))]); } catch { /* noop */ }
+
+  // 1.2 Ciclo de vida: NO remover el iframe a los 1000 ms. El prompt de iOS
+  // difiere la hoja de impresión y al imprimir ya no existiría el documento
+  // (página en blanco). Se remueve en afterprint, al recuperar el foco de la
+  // ventana (con guarda ≥2 s para no matar el documento si el foco vuelve de
+  // inmediato) o a los 120 s como fallback.
+  let momentoPrint = 0;
+  let removido = false;
+  const onFocusVentana = () => { if (Date.now() - momentoPrint >= 2000) removerIframe(); };
+  function removerIframe() {
+    if (removido) return;
+    removido = true;
+    try { clearTimeout(fallback); } catch { /* noop */ }
+    try { window.removeEventListener('focus', onFocusVentana); } catch { /* noop */ }
+    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    console.log('[imprimir] HTML — iframe removido');
   }
+  const fallback = setTimeout(removerIframe, 120000);
+  try { iframe.contentWindow.addEventListener('afterprint', removerIframe); } catch { /* noop */ }
+  window.addEventListener('afterprint', removerIframe, { once: true });
+  window.addEventListener('focus', onFocusVentana);
+
+  console.log('[imprimir] HTML — llamando print()');
+  try { iframe.contentWindow.focus(); } catch (e) { console.log('[imprimir] HTML — focus() falló, continúo', e); }
+  momentoPrint = Date.now();
+  iframe.contentWindow.print();
+  console.log('[imprimir] HTML — print() retornó');
+  return 'printed';
 }
 
 export async function imprimirComprobanteHTML(pago, cuenta) {
