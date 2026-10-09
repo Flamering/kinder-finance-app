@@ -21,12 +21,14 @@ import {
   CalendarDays,
   Check,
   FileDown,
-  ReceiptText
+  ReceiptText,
+  HandCoins
 } from 'lucide-react';
 import RecordModal from './components/RecordModal';
 import PagoModal from './components/PagoModal';
 import DetalleAlumnoCxC from './components/DetalleAlumnoCxC';
 import EventualPagoModal from './components/EventualPagoModal';
+import CobroEventualModal from './components/CobroEventualModal';
 import ComprobantePreview from './components/ComprobantePreview';
 import HomeDashboard from './components/HomeDashboard';
 import CorteDiario from './components/CorteDiario';
@@ -311,6 +313,9 @@ const App = () => {
   const [eventualAlumno, setEventualAlumno] = useState(null);
   const [previewPago, setPreviewPago] = useState(null);
   const [previewCuentas, setPreviewCuentas] = useState([]);
+
+  // Estado para cobro excepcional de eventuales
+  const [isCobroEventualOpen, setIsCobroEventualOpen] = useState(false);
 
   // Contador para refrescar los comprobantes inline del detalle
   const [recargarPagos, setRecargarPagos] = useState(0);
@@ -913,6 +918,14 @@ const App = () => {
                   <span className="hidden sm:inline">Colegiaturas</span>
                 </button>
               )}
+              <button
+                onClick={() => setIsCobroEventualOpen(true)}
+                className="flex items-center gap-1.5 px-3 h-9 bg-[#5A7A9A] text-white text-xs font-bold rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
+                title="Cobro excepcional (alta + cobro en un paso)"
+              >
+                <HandCoins size={14} />
+                <span className="hidden sm:inline">Cobro excepcional</span>
+              </button>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
@@ -1818,6 +1831,25 @@ const App = () => {
                 setRecargarPagos((n) => n + 1);
                 setPreviewPago(r.pago);
                 setPreviewCuentas(data.cxc.filter((c) => c.alumno_id === eventualAlumno?.alumno_id));
+              }}
+            />
+            <CobroEventualModal
+              isOpen={isCobroEventualOpen}
+              onClose={() => setIsCobroEventualOpen(false)}
+              alumnos={data.alumnos}
+              onCreated={(result) => {
+                setIsCobroEventualOpen(false);
+                setData((prev) => ({
+                  ...prev,
+                  alumnos: prev.alumnos.some((a) => a.id === result.alumno.id)
+                    ? prev.alumnos
+                    : [result.alumno, ...prev.alumnos],
+                  cxc: [result.cxc, ...prev.cxc],
+                  finanzas: [result.finanza, ...prev.finanzas],
+                }));
+                setRecargarPagos((n) => n + 1);
+                setPreviewPago(result.pago);
+                setPreviewCuentas([result.cxc, ...data.cxc.filter((c) => c.alumno_id === result.alumno.id)]);
               }}
             />
             <ComprobantePreview
