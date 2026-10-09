@@ -23,7 +23,7 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
 
   const getDefaults = (section) => {
     switch (section) {
-      case 'alumnos': return { estado: 'Activo' };
+      case 'alumnos': return { estado: 'Activo', tipo: 'Regular' };
       case 'cxc': return { estado: 'Pendiente' };
       case 'finanzas': return { tipo: 'Ingreso', estado: 'Completado', fecha: new Date().toISOString().split('T')[0] };
       default: return {};
@@ -153,6 +153,15 @@ const RecordModal = ({ isOpen, onClose, section, mode, initialData, tags, onTags
                 ]}
                 value={formData.estado}
                 onChange={(val) => setFormData({ ...formData, estado: val })}
+              />
+              <SelectField
+                label="Tipo"
+                options={[
+                  { value: 'Regular', label: 'Regular' },
+                  { value: 'Eventual', label: 'Eventual' },
+                ]}
+                value={formData.tipo}
+                onChange={(val) => setFormData({ ...formData, tipo: val })}
               />
             </>
           )}

@@ -990,7 +990,7 @@ const App = () => {
                 return (
                   <div
                     key={section.id}
-                    onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setVistaCorte(false); setSearchTerm(''); }}
+                    onClick={() => { setActiveTab(section.id); setCurrentSection(section.id); setSelectedItem(null); setVistaCorte(false); setSearchTerm(''); setFilters({}); }}
                     className="p-4 rounded-xl cursor-pointer transition-all hover:bg-slate-100 active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-3">
@@ -1072,6 +1072,11 @@ const App = () => {
                         <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border ${getStatusStyles(item.estado, currentSection)}`}>
                           {item.estado}
                         </span>
+                        {currentSection === 'alumnos' && item.tipo === 'Eventual' && (
+                          <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase border bg-amber-100 text-amber-700">
+                            EVENTUAL
+                          </span>
+                        )}
                       </div>
                       <h4 className="font-semibold text-sm truncate">
                         {currentSection === 'alumnos' ? item.nombre :
@@ -1435,6 +1440,10 @@ const App = () => {
                           <span className="text-sm font-semibold text-slate-700">{selectedItem.grado}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                          <span className="text-sm text-slate-500">Tipo</span>
+                          <span className="text-sm font-semibold text-slate-700">{selectedItem.tipo || 'Regular'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-200">
                           <span className="text-sm text-slate-500">Colegiatura</span>
                           <span className="text-sm font-bold text-slate-700">
                             {selectedItem.monto_colegiatura ? `$${parseFloat(selectedItem.monto_colegiatura).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
@@ -1619,6 +1628,7 @@ const App = () => {
                 setSelectedItem(null);
                 setVistaCorte(false);
                 setSearchTerm('');
+                setFilters({});
               }}
               className="relative flex flex-col items-center justify-center w-16 h-full transition-all"
             >
@@ -1677,6 +1687,18 @@ const App = () => {
                       <option value="Pre-Kinder">Pre-Kinder</option>
                       <option value="Kinder A">Kinder A</option>
                       <option value="Kinder B">Kinder B</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo</label>
+                    <select
+                      value={filters.tipo || ''}
+                      onChange={(e) => setFilters({ ...filters, tipo: e.target.value || undefined })}
+                      className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Regular">Regular</option>
+                      <option value="Eventual">Eventual</option>
                     </select>
                   </div>
                 </>
