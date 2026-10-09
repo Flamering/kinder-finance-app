@@ -128,6 +128,26 @@ export async function registrarPagoEventual({ alumnoId, concepto, monto, fecha, 
   return res.json();
 }
 
+export async function registrarCobroEventual({ alumnoId, nombre, grado, tutor, concepto, monto, fecha, metodoPago, referencia }) {
+  const res = await fetch(`${API_BASE}/rpc/registrar_cobro_eventual`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      p_alumno_id: alumnoId,
+      p_nombre: nombre ?? null,
+      p_grado: grado ?? null,
+      p_tutor: tutor ?? null,
+      p_concepto: concepto,
+      p_monto: monto,
+      p_fecha: fecha,
+      p_metodo_pago: metodoPago,
+      p_referencia: referencia ?? null,
+    }),
+  });
+  await throwIfNotOk(res);
+  return res.json();
+}
+
 export async function fetchPagosByAlumno(alumnoId) {
   const res = await fetch(
     `${API_BASE}/pagos?alumno_id=eq.${encodeURIComponent(alumnoId)}&eliminado=eq.false&order=fecha.desc`,
