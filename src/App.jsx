@@ -920,14 +920,15 @@ const App = () => {
                   <span className="hidden sm:inline">Colegiaturas</span>
                 </button>
               )}
-              <button
-                onClick={() => setIsCobroEventualOpen(true)}
-                className="flex items-center gap-1.5 px-3 h-9 bg-[#5A7A9A] text-white text-xs font-bold rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
-                title="Cobro excepcional (alta + cobro en un paso)"
-              >
-                <HandCoins size={14} />
-                <span className="hidden sm:inline">Cobro excepcional</span>
-              </button>
+              {currentSection === 'cxc' && (
+                <button
+                  onClick={() => setIsCobroEventualOpen(true)}
+                  className="flex items-center justify-center w-9 h-9 bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"
+                  title="Cobro excepcional (alta + cobro en un paso)"
+                >
+                  <HandCoins size={18} />
+                </button>
+              )}
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center justify-center w-9 h-9 bg-[#5A7A9A] text-white rounded-lg shadow-md hover:shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200"

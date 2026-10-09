@@ -10,8 +10,6 @@ const freshForm = () => ({
   fecha: new Date().toISOString().split('T')[0],
   metodoPago: 'Transferencia',
   referencia: '',
-  grado: 'Eventual',
-  tutor: '',
 });
 
 const CobroEventualModal = ({ isOpen, onClose, alumnos, onCreated }) => {
@@ -60,8 +58,8 @@ const CobroEventualModal = ({ isOpen, onClose, alumnos, onCreated }) => {
       const result = await registrarCobroEventual({
         alumnoId: esNuevo ? null : formData.alumnoSel,
         nombre: esNuevo ? String(formData.alumnoSel).trim() : null,
-        grado: esNuevo ? (formData.grado || '').trim() || null : null,
-        tutor: esNuevo ? (formData.tutor || '').trim() || null : null,
+        grado: null,
+        tutor: null,
         concepto,
         monto,
         fecha: formData.fecha,
@@ -109,32 +107,7 @@ const CobroEventualModal = ({ isOpen, onClose, alumnos, onCreated }) => {
             placeholder="Selecciona o escribe un nombre..."
             required
           />
-
-          {esNuevo && (
-            <>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Grado</label>
-                <input
-                  type="text"
-                  value={formData.grado}
-                  onChange={(e) => setFormData({ ...formData, grado: e.target.value })}
-                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
-                  placeholder="Ej: Eventual"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tutor</label>
-                <input
-                  type="text"
-                  value={formData.tutor}
-                  onChange={(e) => setFormData({ ...formData, tutor: e.target.value })}
-                  className="w-full p-3 bg-slate-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-brand-200"
-                  placeholder="Opcional"
-                />
-              </div>
-            </>
-          )}
+          <p className="text-xs text-slate-400 ml-1 -mt-2">Si el nombre no existe, se crea el alumno automáticamente.</p>
 
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Concepto *</label>
