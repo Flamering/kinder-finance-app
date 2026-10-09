@@ -31,3 +31,6 @@ dist-ssr
 
 # Local worktrees (isolated implementation workspaces)
 .worktrees/
+
+# Superpowers scratch (ledger, briefs, review packages — git-ignored scratch)
+.superpowers/
