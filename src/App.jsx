@@ -664,6 +664,7 @@ const App = () => {
     }));
     setCurrentSection('cxc');
     setActiveTab('cxc');
+    setFilters({});
   };
 
   // Función para obtener datos filtrados
@@ -1870,6 +1871,7 @@ const App = () => {
                   cxc: [result.cxc, ...prev.cxc],
                   finanzas: [result.finanza, ...prev.finanzas],
                 }));
+                setSelectedItem((prev) => (prev?.__grupo && prev.alumno_id === result.alumno.id ? { ...prev, cuentas: [result.cxc, ...prev.cuentas] } : prev));
                 setRecargarPagos((n) => n + 1);
                 setPreviewPago(result.pago);
                 setPreviewCuentas([result.cxc, ...data.cxc.filter((c) => c.alumno_id === result.alumno.id)]);

@@ -9,9 +9,10 @@
 --
 -- ORDEN ALFABÉTICO DEL RUNNER (scripts/migrar-db.mjs ordena .sort()):
 --   schema.sql  <  schema_alumnos_tipo.sql  <  schema_cxc_tipo.sql
--- Por eso este archivo asume que kinder.alumnos ya existe y que
--- kinder.registrar_pago_eventual ya está creada. El nombre del
--- archivo está elegido para quedar entre ambos.
+-- Este archivo se aplica ANTES de schema_cxc_tipo.sql, por lo que
+-- kinder.registrar_pago_eventual aún no está creada cuando se define
+-- kinder.registrar_cobro_eventual. Eso es seguro porque plpgsql
+-- resuelve la llamada a registrar_pago_eventual en tiempo de ejecución.
 --
 -- Todo el archivo es IDEMPOTENTE: puede re-ejecutarse con
 -- seguridad (IF NOT EXISTS / DO $$ / OR REPLACE).
