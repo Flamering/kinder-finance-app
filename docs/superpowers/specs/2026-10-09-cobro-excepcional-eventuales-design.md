@@ -169,14 +169,14 @@ Aplicar la migración: `PGPASSWORD=... node scripts/migrar-db.mjs` (o `--dry-run
 
 ## 8. Criterios de aceptación
 
-- [ ] A1. `db/schema_alumnos_tipo.sql` aplica con `migrar-db.mjs` en orden alfabético y es re-ejecutable sin error.
-- [ ] A2. `scripts/verify-cobro-eventual.sql` pasa todas las aserciones (cobro a alumno nuevo, cobro a alumno existente sin tocar su `tipo`, rechazos de validación, estado de CxC/pago/finanza).
-- [ ] A3. `pnpm lint` ≤ 12 problemas; `pnpm build` OK.
-- [ ] A4. Desde cualquier sección, un clic en **Cobro excepcional** + nombre nuevo + monto ⇒ alumno `Eventual` creado, CxC `Eventual` `Pagada`, pago con folio, finanza `Ingreso/Evento` y comprobante visible.
-- [ ] A5. Ese alumno aparece con chip `EVENTUAL` en la lista, en el detalle con fila `Tipo`, y **forma grupo en CxC** con su detalle navegable.
-- [ ] A6. El botón *Colegiaturas* muestra la nota de excluidos y **no** genera CxC para ese alumno.
-- [ ] A7. Editar el alumno y ponerlo en `Regular` lo habilita para el lote mensual.
-- [ ] A8. El filtro *Tipo* funciona en Alumnos y no contamina al cambiar de sección.
+- [x] A1. ✅ 2026-10-09: `--dry-run` lista los 4 archivos en orden; aplicado 2x via pct exec sin error. `db/schema_alumnos_tipo.sql` aplica con `migrar-db.mjs` en orden alfabético y es re-ejecutable sin error.
+- [x] A2. ✅ 2026-10-09: EXIT 0 + `OK: verificaciones de cobro excepcional` (casos A-E, incl. atomicidad con ROLLBACK). `scripts/verify-cobro-eventual.sql` pasa todas las aserciones (cobro a alumno nuevo, cobro a alumno existente sin tocar su `tipo`, rechazos de validación, estado de CxC/pago/finanza).
+- [x] A3. ✅ 2026-10-09: `12 problems (10 errors, 2 warnings)` = baseline exacto, 0 en archivos nuevos; build OK ~4s. `pnpm lint` ≤ 12 problemas; `pnpm build` OK.
+- [x] A4. ✅ 2026-10-09: Playwright headless: alta + $50 -> comprobante COM-2026-00320, saldo $0.00; E2E API con folios COM-2026-00318/319. Desde cualquier sección, un clic en **Cobro excepcional** + nombre nuevo + monto ⇒ alumno `Eventual` creado, CxC `Eventual` `Pagada`, pago con folio, finanza `Ingreso/Evento` y comprobante visible.
+- [x] A5. ✅ 2026-10-09: Playwright: chip en lista, fila Tipo en detalle, grupo en CxC con solo su cuenta eventual y seccion Pagos eventuales. Ese alumno aparece con chip `EVENTUAL` en la lista, en el detalle con fila `Tipo`, y **forma grupo en CxC** con su detalle navegable.
+- [x] A6. ✅ 2026-10-09: Playwright: nota "4 alumnos eventuales excluidos"; el alumno de prueba NO esta en la tabla del lote. El botón *Colegiaturas* muestra la nota de excluidos y **no** genera CxC para ese alumno.
+- [x] A7. ✅ 2026-10-09: Playwright: Regular + monto $2300 -> SI aparece en el lote. (Con monto NULL sigue excluido aunque sea Regular: correcto.) Editar el alumno y ponerlo en `Regular` lo habilita para el lote mensual.
+- [x] A8. ✅ 2026-10-09: Playwright: filtro Tipo Todos/Regular/Eventual; setFilters({}) en ambos onClick, sin useEffect. El filtro *Tipo* funciona en Alumnos y no contamina al cambiar de sección.
 
 ## 9. Decisiones asumidas (corregir si no encajan)
 
