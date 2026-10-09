@@ -142,8 +142,10 @@ const ColegiaturaModal = ({ isOpen, onClose, alumnos, onConfirm }) => {
   const [error, setError] = useState(null);
 
   const alumnosElegibles = alumnos.filter(
-    a => a.estado !== 'Inactivo' && a.monto_colegiatura && parseFloat(a.monto_colegiatura) > 0
+    a => a.estado !== 'Inactivo' && a.monto_colegiatura && parseFloat(a.monto_colegiatura) > 0 && a.tipo !== 'Eventual'
   );
+
+  const excluidos = alumnos.filter(a => a.tipo === 'Eventual').length;
 
   const totalMonto = alumnosElegibles.reduce(
     (sum, a) => sum + parseFloat(a.monto_colegiatura), 0
@@ -217,6 +219,10 @@ const ColegiaturaModal = ({ isOpen, onClose, alumnos, onConfirm }) => {
                 <span className="text-lg font-black text-[#5A7A9A]">${totalMonto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
+
+            {excluidos > 0 && (
+              <p className="text-xs text-slate-400 mb-4">{excluidos} alumnos eventuales excluidos</p>
+            )}
 
             <div className="flex-1 overflow-y-auto mb-4 max-h-48 rounded-xl border border-slate-200">
               <table className="w-full text-left">
